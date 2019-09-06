@@ -92,3 +92,6 @@ ngram_features <- df %>%
 #Joines bag of words and bi gram features 
 cleanedDf <- inner_join(bowFeatures, ngram_features, by = "Character")
 cleanedDf <- inner_join(df %>% select(House, Character) %>% unique(), cleanedDf, by = "Character")
+
+#saves dataframe to RDS file
+#saveRDS(cleanedDf, file = "HarryPotter.rds")

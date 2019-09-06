@@ -2,6 +2,7 @@ library(tidyverse)
 library(tidytext)
 library(corpus)
 
+#Reads harry potter data (house, character, and dialogue) 
 df <- read.csv("HarryPotter.csv")
 df$Dialogue <- as.character(df$Dialogue)
 df$Review.Text <- df$Review.Text %>% as.character()
@@ -27,7 +28,7 @@ df %>%
   ) %>%
   mutate(word = text_tokens(word, stemmer = "en") %>% unlist()) %>% # add stemming process
   count(word) %>% 
-  filter(n >1)
+  filter(n >1) #word must be used more than once 
 
 #Create word list
 word_list <- df %>% 
@@ -45,7 +46,6 @@ word_list <- df %>%
   filter(n >1) %>%
   pull(word)
   
-
 # create new features
 bowFeatures <- df %>%
   unnest_tokens(word, `Dialogue`) %>%
@@ -55,14 +55,10 @@ bowFeatures <- df %>%
   spread(word, n) %>%                 # convert to wide format
   map_df(replace_na, 0)               # replace NAs with 0
 
+#Combines bag of words features with df
 df_bow <- df %>%
   inner_join(bowFeatures, by = "Character") %>%   # join data sets
   select(-`Dialogue`)                    # remove original review text
-
-#N grams of 2
-df %>%
-  unnest_tokens(bigram, `Dialogue`, token = "ngrams", n = 2) %>%
-  head()
 
 # create a vector of all bi-grams to keep 
 ngram_list <- df %>%
@@ -93,6 +89,6 @@ ngram_features <- df %>%
   spread(bigram, n) %>%                 # convert to wide format
   map_df(replace_na, 0)                 # replace NAs with 0
 
-
+#Joines bag of words and bi gram features 
 cleanedDf <- inner_join(bowFeatures, ngram_features, by = "Character")
 cleanedDf <- inner_join(df %>% select(House, Character) %>% unique(), cleanedDf, by = "Character")

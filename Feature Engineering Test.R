@@ -1,10 +1,12 @@
-library(text2vec)
 library(tidyverse)
 library(tidytext)
 library(sentimentr)
 
 harrypotter <- read.csv("HarryPotter.csv")
 harrypotter$Dialogue <- harrypotter$Dialogue %>% as.character()
+harrypotter <- harrypotter %>% get_sentences()
+harrypotter$Obs <- seq.int(nrow(harrypotter))
+
 
 harrypotter %>% 
   select(Dialogue) %>% 
@@ -18,9 +20,6 @@ harrypotter %>%
   filter(n > 1) %>% 
   ggplot(mapping = aes(n)) + geom_histogram() + scale_x_log10()
 
-
-
-
 wordList <- harrypotter %>% 
   select(Dialogue) %>% 
   unnest_tokens(word, "Dialogue") %>% 
@@ -33,7 +32,6 @@ wordList <- harrypotter %>%
   filter(n > 1) %>% 
   pull(word)
 
-
 bagofwordsFeatures <- harrypotter %>%
   unnest_tokens(word, `Dialogue`) %>%
   anti_join(stop_words) %>%
@@ -41,9 +39,6 @@ bagofwordsFeatures <- harrypotter %>%
   count(Obs, word) %>%                
   spread(word, n) %>%          
   map_df(replace_na, 0)
-
-
-
 
 bigramList <- harrypotter %>%
   unnest_tokens(bigram, `Dialogue`, token = "ngrams", n = 2) %>%  
@@ -63,16 +58,12 @@ bigramList <- harrypotter %>%
   filter(n >1) %>%
   pull(bigram)
 
-
 bigramFeatures <- harrypotter %>%
   unnest_tokens(bigram, `Dialogue`, token = "ngrams", n = 2) %>%
   filter(bigram %in% bigramList) %>%   
   count(Obs, bigram) %>%              
   spread(bigram, n) %>%
   map_df(replace_na, 0)
-
-
-
 
 trigramList <- harrypotter %>%
   unnest_tokens(trigram, `Dialogue`, token = "ngrams", n = 3) %>% 
@@ -97,7 +88,6 @@ trigramList <- harrypotter %>%
   filter(n > 1) %>% 
   pull(trigram)
 
-
 trigramFeatures <- harrypotter %>% 
   unnest_tokens(trigram, `Dialogue`, token = "ngrams", n = 3) %>% 
   filter(trigram %in% trigramList) %>% 
@@ -105,4 +95,19 @@ trigramFeatures <- harrypotter %>%
   spread(trigram, n) %>% 
   map_df(replace_na,0)
 
+harrypotter %>% 
+  head() %>% 
+  get_sentences() %>%
+  sentiment(polarity_dt = lexicon::hash_sentiment_jockers) %>% 
+  view()
 
+
+
+
+lexicon::hash_nrc_emotions
+lexicon::hash_sentiment_huliu
+lexicon::hash_sentiment_jockers_rinker
+#Finanical Lexicon
+lexicon::hash_sentiment_loughran_mcdonald
+lexicon::hash_sentiment_nrc
+#https://cran.r-project.org/web/packages/lexicon/lexicon.pdf

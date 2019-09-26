@@ -32,3 +32,16 @@ saidWordList <- df %>%
   unique() %>% 
   arrange(value) %>% 
   anti_join(stop_words, by = c("value" = "word"))
+
+
+df %>% 
+  unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  select(word1, word2) %>% 
+  filter(word1 == "harry" | word2 == "harry") %>% 
+  gather() %>% 
+  select(value) %>% 
+  unique() %>% 
+  arrange(value) %>% 
+  anti_join(stop_words, by = c("value" = "word")) %>% 
+  filter(substr(value, start = nchar(value), stop = nchar(value)) == "d")

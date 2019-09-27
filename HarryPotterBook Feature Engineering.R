@@ -1,6 +1,7 @@
 library(tidyverse)
 library(tidytext)
 library(harrypotter)
+library(sentimentr)
 
 philosophers_stone <- philosophers_stone %>% as.data.frame()
 chamber_of_secrets <- chamber_of_secrets %>% as.data.frame()
@@ -107,7 +108,7 @@ colnames(firstNameLexicon) <- "names"
 
 #uses freq_first_names lexicon to find names in harry potter 
 #many names missing but still is worth doing 
-df %>% 
+nameList <- df %>% 
   unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
   separate(bigram, c("word1", "word2"), sep = " ") %>% 
   select(word1, word2) %>% 
@@ -119,3 +120,44 @@ df %>%
   anti_join(stop_words, by = c("value" = "word")) %>% 
   arrange(value) %>% 
   filter(value %in% firstNameLexicon$names)
+
+
+#filters out old names 
+df %>% 
+  unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  select(word1, word2) %>% 
+  filter(word1 %in% dialogueVerbs$dialogueVerbs | word2 %in% dialogueVerbs$dialogueVerbs) %>% 
+  gather() %>% 
+  select(value) %>% 
+  unique() %>% 
+  filter(!value %in% dialogueVerbs$dialogueVerbs) %>% 
+  anti_join(stop_words, by = c("value" = "word")) %>% 
+  arrange(value) %>% 
+  anti_join(nameList, by = c("value" = "value")) %>% 
+  view()
+
+#Manually finding names (first and last that were missed)
+#Didn't use freq_last name lexicon because potential overalp with regular words 
+
+newNames <- c("cho","crabbe","dobby","dolhov","draco","dully","dumbledore","dursley","finnigan","firenze","fleur","flitwick","goyle","granger","gregorovitch","grindelvald","gridenlwald","hargrid","harry","harper","hermione","igro","jones","jorkins","karakoff","kingsley","kirke","kreacher","krum","lovegood","lucius","lupin","macmillan","macnair","malfoy","malkin","mcgonagall","mclaggen","mcmillan","nagini","ninny","nox","nymphadora","o'flaherty","olivander","padma","parkinson","parvati","phineas","pomona","potter","professor","riddle","roberts","romilda","romulus","ronan","rookwood","scropious","seamus","sirius","snape","snivellus","snivelus","tonks","tosh","trelawney","umbridge","uncle","voldemort","warrington","weasley","weaseleys","wormtail","") %>% as.data.frame()
+colnames(newNames) <- "value"
+
+nameList <- rbind(nameList,newNames) %>% arrange()
+
+#uses nameList and dialogueVerbs to find sentences in books
+#finds the index (book, chapter, and sentence) where dialogue verb and name are in bigram
+sentences <- df %>% 
+  get_sentences() %>% 
+  unnest_tokens(bigram, `text`, token = "ngrams", n = 2) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter((word1 %in% dialogueVerbs$dialogueVerbs & word2 %in% nameList$value) | (word1 %in% dialogueVerbs$dialogueVerbs & word2 %in% nameList$value)) %>% 
+  select(-word1, -word2) %>% 
+  unique() %>% 
+  arrange(book, element_id, sentence_id)
+
+#uses index to select text that has dialogue verb and name combination 
+text <- df %>% 
+  get_sentences() %>% 
+  inner_join(sentences, by = c("book" = "book", "element_id" = "element_id", "sentence_id" = "sentence_id"))
+

@@ -154,22 +154,70 @@ sentences <- df %>%
   filter((word1 %in% dialogueVerbs$dialogueVerbs & word2 %in% nameList$value) | (word1 %in% dialogueVerbs$dialogueVerbs & word2 %in%    nameList$value)) %>% 
   select(-word1, -word2) %>% 
   unique() %>% 
+  arrange(book, element_id, sentence_id) %>% 
+  inner_join(df %>% get_sentences(), 
+             by = c("book" = "book", "element_id" = "element_id", "sentence_id" = "sentence_id"))
+
+#finds sentences with bigram of character verb that also contains quotes 
+sharedText <- inner_join(df %>% 
+                           get_sentences() %>% 
+                           filter(str_detect(text, '\\"') == TRUE) %>% 
+                           select(book, element_id, sentence_id), 
+                         sentences, by = c("book" = "book", "element_id" = "element_id","sentence_id" = "sentence_id")) %>% 
   arrange(book, element_id, sentence_id)
 
-#uses index to select text that has dialogue verb and name combination 
-text <- df %>% 
-  get_sentences() %>% 
-  inner_join(sentences, by = c("book" = "book", "element_id" = "element_id", "sentence_id" = "sentence_id"))
+#adds bigram features
+sharedText <- sharedText %>% 
+  mutate(key = paste(book, element_id, sentence_id, sep = "")) %>% 
+  unnest_tokens(bigram, `text`, token = "ngrams", n = 2) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(word1 %in% nameList$value & word2 %in% dialogueVerbs$dialogueVerbs |
+           word2 %in% nameList$value & word1 %in% dialogueVerbs$dialogueVerbs) %>% 
+  unite("bigram", c(word1, word2), sep = " ") %>%
+  count(key,bigram) %>% 
+  inner_join(sharedText %>% 
+               mutate(key = paste(book, element_id, sentence_id, sep = "")) , 
+             by = c("key" = "key")) %>% 
+  select(-n) %>% 
+  arrange(book, element_id, sentence_id)
 
-quotes <- df %>% 
-  get_sentences() %>% 
-  filter(str_detect(text, '\"') == TRUE)
+#labels sentences that contain 2 names and dialogue verbs
+#chooses verb dialogue over dialogue verb (said harry over harry said)
+duplicateSharedText <- sharedText %>% 
+  count(key) %>% 
+  filter(n != 1) %>% 
+  select(key) %>% 
+  inner_join(sharedText, by = ("key" = "key")) %>% 
+  select(-key, -bigram) %>% 
+  mutate(key = paste(book,element_id, sentence_id,sep = "")) %>% 
+  unnest_tokens(bigram, `text`, token = "ngrams", n =2) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  filter(word1 %in% dialogueVerbs$dialogueVerbs & word2 %in% nameList$value) %>% 
+  unique() %>% select(word2, key) %>% 
+  inner_join(sharedText, by = ("key" = "key")) %>% 
+  select(-key, -bigram)
 
-text$text
-quotes$text
+#labels dialogue that does not have duplicate dialoge verbs or characters 
+#finds name matching with any bigram 
+uniqueSharedText <- sharedText %>% 
+  count(key) %>% 
+  filter(n == 1) %>% 
+  select(key) %>% 
+  inner_join(sharedText, by = ("key" = "key")) %>% 
+  select(key, bigram) %>% 
+  unnest_tokens(bigram, `bigram`, token = "ngrams", n =2) %>% 
+  separate(bigram, c("word1", "word2"), sep = " ") %>% 
+  gather(key = "bigram", value = "word", -key) %>% 
+  select(-bigram) %>% 
+  filter(word %in% nameList$value) %>% 
+  inner_join(sharedText, by = ("key" = "key")) %>% 
+  select(-bigram, -key)
 
+#Creates final df with labeled dialogue
+colnames(duplicateSharedText) <- c("character", "book","element_id","sentence_id","text")
+colnames(uniqueSharedText) <- c("character", "book","element_id","sentence_id","text")
+bookText <- rbind(duplicateSharedText, uniqueSharedText) %>% 
+  unique() %>% 
+  arrange(book, element_id, sentence_id)
 
-quotes %>% view()
-text %>% view()
-
-sharedText <- inner_join(quotes, text, by = c("book" = "book", "element_id" = "element_id","sentence_id" = "sentence_id"))
+#write.csv(bookText, "booktext.csv", row.names = FALSE)

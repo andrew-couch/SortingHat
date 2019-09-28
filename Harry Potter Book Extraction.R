@@ -165,8 +165,11 @@ quotes <- df %>%
   get_sentences() %>% 
   filter(str_detect(text, '\"') == TRUE)
 
+text$text
+quotes$text
 
-fulldialogue <- rbind(text, quotes) 
-fulldialogue <-  fulldialogue %>% unique()
-fulldialogue <-  fulldialogue %>% arrange(book, element_id, sentence_id)
-write.csv(fulldialogue, "fulldialogue.csv", row.names = FALSE)
+
+quotes %>% view()
+text %>% view()
+
+sharedText <- inner_join(quotes, text, by = c("book" = "book", "element_id" = "element_id","sentence_id" = "sentence_id"))

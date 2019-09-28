@@ -151,7 +151,7 @@ sentences <- df %>%
   get_sentences() %>% 
   unnest_tokens(bigram, `text`, token = "ngrams", n = 2) %>% 
   separate(bigram, c("word1", "word2"), sep = " ") %>% 
-  filter((word1 %in% dialogueVerbs$dialogueVerbs & word2 %in% nameList$value) | (word1 %in% dialogueVerbs$dialogueVerbs & word2 %in% nameList$value)) %>% 
+  filter((word1 %in% dialogueVerbs$dialogueVerbs & word2 %in% nameList$value) | (word1 %in% dialogueVerbs$dialogueVerbs & word2 %in%    nameList$value)) %>% 
   select(-word1, -word2) %>% 
   unique() %>% 
   arrange(book, element_id, sentence_id)
@@ -161,80 +161,12 @@ text <- df %>%
   get_sentences() %>% 
   inner_join(sentences, by = c("book" = "book", "element_id" = "element_id", "sentence_id" = "sentence_id"))
 
+quotes <- df %>% 
+  get_sentences() %>% 
+  filter(str_detect(text, '\"') == TRUE)
 
 
-
-harryWords <- df %>% 
-  unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
-  separate(bigram, c("word1", "word2"), sep = " ") %>% 
-  select(word1, word2) %>% 
-  filter(word1 == "harry" | word2 == "harry") %>% 
-  gather() %>% 
-  select(value) %>% 
-  arrange(value) %>% 
-  anti_join(stop_words, by = c("value" = "word")) %>% 
-  filter(substr(value, start = nchar(value), stop = nchar(value)) == "d") %>% 
-  select(value) %>% 
-  count(value) %>% 
-  top_n(n, n = 10) %>% 
-  arrange(-n)
-
-ronWords <- df %>% 
-  unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
-  separate(bigram, c("word1", "word2"), sep = " ") %>% 
-  select(word1, word2) %>% 
-  filter(word1 == "ron" | word2 == "ron") %>% 
-  gather() %>% 
-  select(value) %>% 
-  arrange(value) %>% 
-  anti_join(stop_words, by = c("value" = "word")) %>% 
-  filter(substr(value, start = nchar(value), stop = nchar(value)) == "d") %>% 
-  select(value) %>% 
-  count(value) %>% 
-  top_n(n, n = 10) %>% 
-  arrange(-n)
-
-hermioneWords <- df %>% 
-  unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
-  separate(bigram, c("word1", "word2"), sep = " ") %>% 
-  select(word1, word2) %>% 
-  filter(word1 == "hermione" | word2 == "hermione") %>% 
-  gather() %>% 
-  select(value) %>% 
-  arrange(value) %>% 
-  anti_join(stop_words, by = c("value" = "word")) %>% 
-  filter(substr(value, start = nchar(value), stop = nchar(value)) == "d") %>% 
-  select(value) %>% 
-  count(value) %>% 
-  top_n(n, n = 10) %>% 
-  arrange(-n)
-
-
-
-harryWords$character <- "harry"
-ronWords$character <- "ron"
-hermioneWords$character <- "hermione"
-
-rbind(harryWords, ronWords, hermioneWords) %>% 
-  group_by(character) %>% 
-  arrange(character,desc(n)) %>%
-  mutate(order = row_number()) %>% 
-  ungroup() %>% 
-  ggplot(mapping = aes(x = reorder(value, order), y = n, color = character, group = character, fill = character)) + 
-  geom_col() + 
-  facet_wrap(~character, scales = "free",nrow = 3)
-
-rbind(harryWords, ronWords, hermioneWords) %>% 
-  group_by(character) %>% 
-  arrange(character,desc(n)) %>% 
-  mutate(order = row_number()) %>% 
-  ggplot(aes(x = reorder(value, -order), y = n, color = character, fill = character)) + 
-  geom_col() + 
-  coord_flip() + 
-  facet_wrap(~character, ncol = 3, scales = "free")
-
-harry <- ggplot(data = harryWords, mapping = aes(x = reorder(value, n), y = n)) + geom_col(fill = "red") + coord_flip() + ggtitle("Harry")  
-ron <- ggplot(data = ronWords, mapping = aes(x = reorder(value, n), y = n)) + geom_col(fill = "blue") + coord_flip() + ggtitle("Ron")
-hermione <- ggplot(data = hermioneWords, mapping = aes(x = reorder(value, n), y = n)) + geom_col(fill = "green") + coord_flip() + ggtitle("Hermione")
-
-gridExtra::grid.arrange(harry, ron, hermione)
+fulldialogue <- rbind(text, quotes) 
+fulldialogue <-  fulldialogue %>% unique()
+fulldialogue <-  fulldialogue %>% arrange(book, element_id, sentence_id)
+write.csv(fulldialogue, "fulldialogue.csv", row.names = FALSE)

@@ -1,97 +1,155 @@
 library(tidyverse)
 library(tidytext)
-library(harrypotter)
 library(sentimentr)
+library(ggthemes)
 
-philosophers_stone <- philosophers_stone %>% as.data.frame()
-chamber_of_secrets <- chamber_of_secrets %>% as.data.frame()
-prisoner_of_azkaban <- prisoner_of_azkaban %>% as.data.frame()
-goblet_of_fire <- goblet_of_fire %>% as.data.frame()
-order_of_the_phoenix <- order_of_the_phoenix %>% as.data.frame()
-half_blood_prince <- half_blood_prince %>% as.data.frame()
-deathly_hallows <- deathly_hallows %>% as.data.frame()
+df <- read.csv("harrypotter.csv")
+df$text <- as.character(df$text)
+df <- df %>% mutate(medium = df$book %>% str_extract(pattern = paste(c("Book","Movie"), collapse = "|")))
+names <- df %>% separate(character, c("medium","character"), sep = "_") %>% select(character) %>% unique()
+names <- tolower(names$character)
+df <- df %>% separate(book, c("medium","title"), sep = "_", extra = "merge")
 
-
-philosophers_stone$book <- "philosophers_stone"
-chamber_of_secrets$book <- "chamber_of_secrets"
-prisoner_of_azkaban$book <- "prisoner_of_azkaban"
-goblet_of_fire$book <- "goblet_of_fire"
-order_of_the_phoenix$book <- "order_of_the_phoenix"
-half_blood_prince$book <- "half_blood_prince"
-deathly_hallows$book <- "deathly_hallows"
-
-df <- rbind(philosophers_stone, chamber_of_secrets, prisoner_of_azkaban, goblet_of_fire, order_of_the_phoenix, half_blood_prince, deathly_hallows)
-colnames(df) <- c("text", "book")
-
-harryWords <- df %>% 
-  unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
-  separate(bigram, c("word1", "word2"), sep = " ") %>% 
-  select(word1, word2) %>% 
-  filter(word1 == "harry" | word2 == "harry") %>% 
-  gather() %>% 
-  select(value) %>% 
-  arrange(value) %>% 
-  anti_join(stop_words, by = c("value" = "word")) %>% 
-  select(value) %>% 
-  filter(!value %in% c("harry", "potter","hermione", "ron")) %>% 
-  count(value) %>% 
-  top_n(n, n = 10) %>% 
-  arrange(-n)
-
-ronWords <- df %>% 
-  unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
-  separate(bigram, c("word1", "word2"), sep = " ") %>% 
-  select(word1, word2) %>% 
-  filter(word1 == "ron" | word2 == "ron") %>% 
-  gather() %>% 
-  select(value) %>% 
-  arrange(value) %>% 
-  anti_join(stop_words, by = c("value" = "word")) %>% 
-  select(value) %>% 
-  filter(!value %in% c("harry", "potter","hermione", "ron", "weasley", "ginny")) %>% 
-  count(value) %>% 
-  top_n(n, n = 10) %>% 
-  arrange(-n)
-
-
-hermioneWords <- df %>% 
-  unnest_tokens(bigram,`text`, token = "ngrams", n = 2) %>%  
-  separate(bigram, c("word1", "word2"), sep = " ") %>% 
-  select(word1, word2) %>% 
-  filter(word1 == "hermione" | word2 == "hermione") %>% 
-  gather() %>% 
-  select(value) %>% 
-  arrange(value) %>% 
-  anti_join(stop_words, by = c("value" = "word")) %>% 
-  select(value) %>% 
-  filter(!value %in% c("harry", "potter","hermione", "ron", "granger")) %>% 
-  count(value) %>% 
-  top_n(n, n = 10) %>% 
-  arrange(-n)
-
-ronWords
-harryWords
-hermioneWords
-
-harry <- ggplot(data = harryWords, mapping = aes(x = reorder(value, n), y = n)) + geom_col(fill = "red") + coord_flip() + ggtitle("Harry")  
-ron <- ggplot(data = ronWords, mapping = aes(x = reorder(value, n), y = n)) + geom_col(fill = "blue") + coord_flip() + ggtitle("Ron")
-hermione <- ggplot(data = hermioneWords, mapping = aes(x = reorder(value, n), y = n)) + geom_col(fill = "green") + coord_flip() + ggtitle("Hermione")
-
-gridExtra::grid.arrange(harry, ron, hermione)
-
-topWords <- df %>% 
+#Comapres spoken words by house
+df %>% 
+  filter(house != "No Entry") %>% 
   get_sentences() %>% 
-  unnest_tokens("word", `text`) %>% 
-  filter(!word %in% stop_words$word) %>% 
-  select(book, word) %>% 
-  group_by(book) %>% 
+  unnest_tokens(word, `text`) %>% 
+  anti_join(stop_words, by = ("word" = "word"))%>% 
+  filter(!word %in% names) %>% 
+  group_by(house) %>% 
   count(word) %>% 
-  top_n(n, n =10)
+  top_n(n, n = 10) %>% 
+  arrange(house, -n) %>%
+  ungroup() %>% 
+  mutate(word = reorder_within(word, n, house)) %>% 
+  ggplot(mapping = aes(x = word, y = n, color = house, fill = house)) + 
+  geom_col(show.legend = FALSE) + 
+  facet_wrap(~house, scales = "free") +
+  scale_x_reordered() +
+  coord_flip() + 
+  theme_economist()
 
-topWords <- topWords %>% arrange(book, -n) %>% group_by(book) %>% mutate(order = row_number()) 
-topWords$book <- factor(topWords$book, levels = c("philosophers_stone","chamber_of_secrets","prisoner_of_azkaban","goblet_of_fire","order_of_the_phoenix","half_blood_prince","deathly_hallows"))
 
-ggplot(data = topWords, mapping = aes(reorder_within(word, n, book, sep = " "), n)) + geom_col(aes(color = book, fill = book)) + facet_wrap(~book, scales = "free") + coord_flip()
+  #Comapres Pos/Neg words for each house 
+  df %>% 
+    filter(house != "No Entry") %>% 
+    get_sentences() %>% 
+    unnest_tokens(word, `text`) %>% 
+    anti_join(stop_words) %>% 
+    inner_join(get_sentiments("bing")) %>% 
+    group_by(house, word, sentiment) %>% 
+    count(sentiment) %>% 
+    group_by(house, sentiment) %>% 
+    mutate(rank = rank(-n, ties.method = "first")) %>% 
+    filter(rank <= 5) %>% 
+    ungroup() %>% 
+    mutate(n = if_else(sentiment == "positive",n,-n)) %>%  
+    mutate(word = reorder_within(word, n, house)) %>% 
+    ggplot(aes(x = word, y = n, fill = sentiment)) +
+    geom_col() + 
+    scale_x_reordered() +
+    facet_wrap(~house, scales = "free") + 
+    theme_economist() +
+    coord_flip()
+  
+  #compares sentiment from books/movies
+  df %>% 
+    filter(house != "No Entry") %>% 
+    get_sentences() %>% 
+    unnest_tokens(word, `text`) %>% 
+    anti_join(stop_words) %>% 
+    inner_join(get_sentiments("bing")) %>% 
+    group_by(title, word, sentiment) %>% 
+    count(sentiment) %>% 
+    group_by(title, sentiment) %>% 
+    mutate(rank = rank(-n, ties.method = "first")) %>% 
+    filter(rank <= 5) %>% 
+    ungroup() %>% 
+    mutate(n = if_else(sentiment == "positive",n,-n)) %>%  
+    mutate(word = reorder_within(word, n, title)) %>% 
+    ggplot(aes(x = word, y = n, fill = sentiment)) +
+    geom_col() + 
+    scale_x_reordered() +
+    facet_wrap(~title, scales = "free") + 
+    coord_flip() +
+    theme_economist()
+  
+  
+  #Compares sentiment trends in the books by genre
+  df %>% 
+    filter(house != "No Entry") %>% 
+    get_sentences() %>% 
+    unnest_tokens(word, `text`) %>% 
+    anti_join(stop_words) %>% 
+    inner_join(get_sentiments("bing")) %>% 
+    group_by(medium , title, sentiment) %>% 
+    count(sentiment) %>% 
+    filter(medium != "wiki") %>% 
+    filter(title != "Wiki") %>% 
+    filter(!title %in% c("Half_Blood_Prince","Order_Of_The_Phoenix","Wiki")) %>% 
+    ungroup() %>% 
+    mutate(title = factor(title, levels = c("Philosophers_Stone","Sorcerer_Stone","Chamber_Of_Secrets","Prisoner_Of_Azkaban","Prisonor_Of_Azk","Goblet_Of_Fire","Deathly_Hallows"))) %>% 
+    ggplot(aes(x = title, y = n, color = sentiment, group = sentiment)) + 
+    geom_line(size = 1) + 
+    facet_wrap(~medium, scales = "free") +
+    theme_economist()
+  
 
-#use of harry, ron, and hermione in the books 
-topWords %>% ggplot(mapping = aes(x = book, y = n, group = word, color = word)) + geom_line() + scale_y_log10() 
+  #Compares house sentiment trends throughout the series by medium 
+  df %>% 
+    filter(medium != "wiki" | title != "Wiki") %>% 
+    filter(house != "No Entry") %>% 
+    filter(!title %in% c("Half_Blood_Prince","Order_Of_The_Phoenix","Wiki")) %>% 
+    get_sentences() %>% 
+    unnest_tokens(word, `text`) %>% 
+    anti_join(stop_words) %>% 
+    inner_join(get_sentiments("bing")) %>% 
+    group_by(medium, title, house, sentiment) %>% 
+    count(sentiment) %>% 
+    inner_join(df %>% 
+                 filter(medium != "wiki" | title != "Wiki") %>% 
+                 filter(house != "No Entry") %>% 
+                 filter(!title %in% c("Half_Blood_Prince","Order_Of_The_Phoenix","Wiki")) %>% 
+                 get_sentences() %>% 
+                 unnest_tokens(word, `text`) %>% 
+                 anti_join(stop_words) %>% 
+                 group_by(medium,title, house) %>% 
+                 count(word) %>% 
+                 group_by(medium,title, house) %>% 
+                 summarise(totalword = sum(n)), 
+               by = c("medium" = "medium", "title" = "title", "house" = "house")) %>% 
+    summarise(score = n/totalword) %>% 
+    ungroup() %>% 
+    mutate(title = factor(title, levels = c("Philosophers_Stone","Sorcerer_Stone","Chamber_Of_Secrets","Prisoner_Of_Azkaban","Prisonor_Of_Azk","Goblet_Of_Fire","Deathly_Hallows"))) %>% 
+    ggplot(aes(x = title, y = score, color = house, group = house)) + geom_line(size = 1) + facet_wrap(~medium + sentiment, scales = "free") + theme_economist()
+
+
+ #Pos neg words by house and title
+  df %>% 
+    filter(house != "No Entry") %>% 
+    filter(!title %in% c("Half_Blood_Prince","Order_Of_The_Phoenix","Wiki")) %>% 
+    filter(medium == "Movie") %>% 
+    get_sentences() %>% 
+    unnest_tokens(word, `text`) %>% 
+    anti_join(stop_words) %>% 
+    inner_join(get_sentiments("bing")) %>% 
+    group_by(title, house, word, sentiment) %>% 
+    count(sentiment) %>% 
+    group_by(title,house, sentiment) %>% 
+    mutate(rank = rank(-n, ties.method = "first")) %>% 
+    filter(rank <= 5) %>% 
+    ungroup() %>% 
+    mutate(n = if_else(sentiment == "positive",n,-n)) %>%  
+    mutate(word = reorder_within(word, n, title) )%>% 
+    mutate(title = factor(title, levels = c("Philosophers_Stone","Sorcerer_Stone","Chamber_Of_Secrets","Prisoner_Of_Azkaban","Prisonor_Of_Azk","Goblet_Of_Fire","Deathly_Hallows"))) %>% 
+    ggplot(aes(x = word, y = n, fill = sentiment)) +
+    geom_col() + 
+    scale_x_reordered() +
+    facet_wrap(house~title, scales = "free") +
+    coord_flip() +
+    ggtitle("House Pos/Neg Word changes by Movie") + 
+    theme_economist() + 
+    theme(legend.position = "top",
+          legend.justification = "center",
+          plot.title = element_text(hjust = .5))

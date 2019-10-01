@@ -77,7 +77,7 @@ The features consists of Book, House, Character, and Text
 #### Extreme Gradient Boosting
 * method = XGBoostLinear
 
-#### Convolutional Neuran Network
+#### Convolutional Neural Network
 * method = Keras pacakge 
 
 #### Long Short Term Memory Neural Network

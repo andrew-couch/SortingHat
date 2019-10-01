@@ -153,3 +153,21 @@ df %>%
     theme(legend.position = "top",
           legend.justification = "center",
           plot.title = element_text(hjust = .5))
+  
+ 
+#using tf-idf plotting top 5 words  
+  df %>% 
+    filter(house != "No Entry") %>% 
+    get_sentences() %>% 
+    unnest_tokens(word, `text`) %>% 
+    filter(!word %in% names) %>% 
+    count(house,word, sort = TRUE) %>% 
+    bind_tf_idf(word, house, n) %>% 
+    group_by(house) %>% 
+    top_n(tf_idf, n = 5) %>% 
+    ungroup() %>% 
+    mutate(word = reorder(word, tf_idf)) %>% 
+    ggplot(aes(x = word, y = tf_idf, color = house, fill = house)) + 
+    geom_col() + 
+    facet_wrap(~house, scales = "free") + 
+    coord_flip()

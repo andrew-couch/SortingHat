@@ -140,7 +140,7 @@ df %>%
     mutate(rank = rank(-n, ties.method = "first")) %>% 
     filter(rank <= 5) %>% 
     ungroup() %>% 
-    mutate(n = if_else(sentiment == "positive",n,-n)) %>%  
+    mutate(n = if_seelse(sentiment == "positive",n,-n)) %>%  
     mutate(word = reorder_within(word, n, title) )%>% 
     mutate(title = factor(title, levels = c("Philosophers_Stone","Sorcerer_Stone","Chamber_Of_Secrets","Prisoner_Of_Azkaban","Prisonor_Of_Azk","Goblet_Of_Fire","Deathly_Hallows"))) %>% 
     ggplot(aes(x = word, y = n, fill = sentiment)) +

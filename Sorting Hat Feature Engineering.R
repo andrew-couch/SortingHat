@@ -5,7 +5,6 @@ library(sentimentr)
 df <- read.csv("harrypotter.csv", stringsAsFactors = FALSE)
 nameList <- read.csv("namelist.csv")
 
-
 #This section creates ngram features 
 #The features will be grouped by character 
 #Characters are different for each medium there's a movie_harry and book_harry
@@ -102,26 +101,41 @@ trigramFeatures <- df %>%
 
 #This section creates lexicon sentiment analysis features 
 #data will need to be processed on a sentence level using sentimentR 
+sentences <- df %>% get_sentences()
 
-df %>% 
-  get_sentences() %>% 
-  unnest_tokens(word, "text") %>% 
-  anti_join(stop_words) %>% 
-  inner_join(get_sentiments(lexicon = "bing")) %>% 
-  group_by(book,character, element_id,sentence_id, sentiment) %>% 
-  count(sentiment) %>% 
-  spread(sentiment, n, fill = 0)
+huliu <- sentences %>% sentiment(lexicon::hash_sentiment_huliu) %>% select(sentiment)
+jockers_rinker <- sentences %>% sentiment(lexicon::hash_sentiment_jockers_rinker) %>% select(sentiment)
+nrc <- sentences %>% sentiment(lexicon::hash_sentiment_nrc) %>% select(sentiment)
+senticnet <- sentences %>% sentiment(lexicon::hash_sentiment_senticnet) %>% select(sentiment)
+sentiword <- sentences %>% sentiment(lexicon::hash_sentiment_sentiword) %>% select(sentiment)
+slagsd <- sentences %>% sentiment(lexicon::hash_sentiment_slangsd) %>% select(sentiment)
+socal_google <- sentences %>% sentiment(lexicon::hash_sentiment_socal_google) %>% select(sentiment)
 
-
-
-
-
+#Creates emotions features, features are emotion/word
+emotions <- lexicon::nrc_emotions
+sentences %>% 
+  unnest_tokens(word, `text`) %>% 
+  filter(word %in% emotions$term) %>% 
+  left_join(emotions, by = c("word" = "term")) %>% 
+  select(-word) %>% 
+  select(character, anger, anticipation, disgust, fear, joy, sadness, surprise, trust) %>% 
+  group_by(character) %>% 
+  summarise_each(funs(sum)) %>% 
+  left_join(df %>% 
+              unnest_tokens(word, "text") %>% 
+              group_by(character) %>% 
+              count(character, character), by = c("character" = "character")) %>% 
+  gather(key = "sentiment", value = "score", -character, -n) %>% 
+  mutate(score = score/n) %>% 
+  select(-n) %>% 
+  spread(sentiment, score)
 
 #This section will add an tf-idf feature (term frequency and inverse document frequency)
 #Where document will be each movie or book 
 #Weights words and may help separating the houses
 #filters out top 100 tf_idf words for each house, takes more than 100 because of ties 
 
+#Creates tf-idf word list
 tf_idfWOrdList <- df %>% 
   filter(house != "No Entry") %>% 
   get_sentences() %>% 
@@ -130,7 +144,7 @@ tf_idfWOrdList <- df %>%
          !str_detect(word, pattern = "[[:digit:]]"),
          !str_detect(word, pattern = "[[:punct:]]"),
          !str_detect(word, pattern = "(.)\\1{2,}"),
-         !str_detect(word, pattern = "\\b(.)\\b"),) %>%
+         !str_detect(word, pattern = "\\b(.)\\b")) %>%
   anti_join(stop_words) %>% 
   count(house, word, sort = TRUE) %>% 
   bind_tf_idf(word, house, n) %>% 
@@ -139,3 +153,10 @@ tf_idfWOrdList <- df %>%
   pull(word) %>% 
   unique() 
 
+#Creates tf-idf features
+tfidfFeatures <- df %>% 
+  unnest_tokens(word, "text") %>% 
+  filter(word %in% tf_idfWOrdList) %>% 
+  count(character, word) %>% 
+  spread(word, n) %>% 
+  map_df(replace_na, 0)

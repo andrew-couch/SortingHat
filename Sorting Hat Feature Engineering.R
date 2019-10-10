@@ -2,10 +2,9 @@ library(tidyverse)
 library(tidytext)
 library(sentimentr)
 
-df <- read.csv("harrypotter.csv")
-df$text <- as.character(df$text)
-
+df <- read.csv("harrypotter.csv", stringsAsFactors = FALSE)
 nameList <- read.csv("namelist.csv")
+
 
 #This section creates ngram features 
 #The features will be grouped by character 

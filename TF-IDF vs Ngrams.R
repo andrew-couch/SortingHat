@@ -167,7 +167,8 @@ rbind(df %>%
         top_n(tf_idf, n = 10) %>% 
         select(house, word, tf_idf) %>% 
         mutate(type = "tf-idf") %>% 
-        rename("value" = tf_idf), df %>% 
+        rename("value" = tf_idf), 
+      df %>% 
         get_sentences() %>% 
         unnest_tokens(word, "text") %>% 
         filter(!word %in% names$value) %>% 
@@ -177,5 +178,25 @@ rbind(df %>%
         top_n(n, n = 10) %>% 
         mutate(type = "bow") %>% 
         rename("value" = n)) %>% 
-  ggplot(mapping = aes(x = reorder_within(word, value, house), y = value, color = house, fill = house)) + geom_col() + 
-  scale_x_reordered() + facet_wrap(~type + house, scales = "free") + coord_flip()
+  ggplot(mapping = aes(x = reorder_within(word, value, house), 
+                       y = value, 
+                       color = house, 
+                       fill = house)) + 
+  geom_col() + 
+  scale_x_reordered() + 
+  facet_wrap(~ type + house, 
+             scales = "free", ncol = 2) +  
+  coord_flip() 
+
+
+
+#sentiment tf-idf
+tfidf <-  df %>% 
+  get_sentences() %>% 
+  unnest_tokens(word, "text") %>% 
+  filter(!word %in% names$value) %>% 
+  filter(!word %in% stop_words$word) %>% 
+  count(house, word, sort = TRUE) %>% 
+  bind_tf_idf(word, house, n) %>% 
+  group_by(house)
+

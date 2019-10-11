@@ -6,6 +6,7 @@ df <- read.csv("harrypotter.csv", stringsAsFactors = FALSE)
 df <- df %>% filter(house != "No Entry")
 nameList <- read.csv("namelist.csv")
 
+
 #writes bag of words list 
 bow <- df %>% 
   filter(house != "No Entry") %>% 
@@ -102,6 +103,37 @@ sentiments <-  sentiments %>%
   summarise(score = mean(score)) %>% 
   spread(key = sentiment, value = score)
 
+
+
+#Generates emotion features 
+emotions <- lexicon::nrc_emotions
+emotionFeatures <- df %>% 
+  get_sentences() %>% 
+  unnest_tokens(word, `text`) %>% 
+  filter(word %in% emotions$term) %>% 
+  left_join(emotions, by = c("word" = "term")) %>% 
+  select(-word) %>% 
+  select(character, anger, anticipation, disgust, fear, joy, sadness, surprise, trust) %>% 
+  group_by(character) %>% 
+  summarise_each(funs(sum)) %>% 
+  left_join(df %>% 
+              unnest_tokens(word, "text") %>% 
+              group_by(character) %>% 
+              count(character, character), by = c("character" = "character")) %>% 
+  gather(key = "sentiment", value = "score", -character, -n) %>% 
+  mutate(score = score/n) %>% 
+  select(-n) %>% 
+  spread(sentiment, score) %>% 
+  rename("anger.emotion" = anger,
+         "anticipation.emotion" = anticipation,
+         "digust.emotion" = disgust,
+         "fear.emotion" = fear,
+         "joy.emotion" = joy,
+         "sadness.emotion" = sadness,
+         "surprise.emotion" = surprise,
+         "trust.emotion" = trust)
+
+
 #Creates final df for modeling 
 harrypotter <- df %>% 
   select(house,character) %>% 
@@ -111,4 +143,5 @@ harrypotter <- df %>%
   left_join(bowFeatures) %>% 
   left_join(bigramFeatures) %>% 
   left_join(trigramFeatures) %>% 
-  left_join(sentiments)
+  left_join(sentiments) %>% 
+  left_join(emotionFeatures)

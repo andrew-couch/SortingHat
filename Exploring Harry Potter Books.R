@@ -2,6 +2,7 @@ library(tidyverse)
 library(tidytext)
 library(sentimentr)
 library(ggthemes)
+options(scipen = 999)
 
 df <- read.csv("harrypotter.csv")
 df$text <- as.character(df$text)
@@ -29,7 +30,7 @@ df %>%
   facet_wrap(~house, scales = "free") +
   scale_x_reordered() +
   coord_flip() + 
-  theme_economist()
+  theme_economist() + ggtitle("Most popular words by house")
 
 
   #Comapres Pos/Neg words for each house 
@@ -52,7 +53,8 @@ df %>%
     scale_x_reordered() +
     facet_wrap(~house, scales = "free") + 
     theme_economist() +
-    coord_flip()
+    coord_flip() + 
+    ggtitle("Top 5 positive and negative words by house")
   
   #compares sentiment from books/movies
   df %>% 
@@ -74,7 +76,8 @@ df %>%
     scale_x_reordered() +
     facet_wrap(~title, scales = "free") + 
     coord_flip() +
-    theme_economist()
+    theme_economist() + 
+    ggtitle("Top 5 positive/negative words by book")
   
   
   #Compares sentiment trends in the books by genre
@@ -94,7 +97,8 @@ df %>%
     ggplot(aes(x = title, y = n, color = sentiment, group = sentiment)) + 
     geom_line(size = 1) + 
     facet_wrap(~medium, scales = "free") +
-    theme_economist()
+    theme_economist() +
+    ggtitle("Positive/Negative sentiment trends by medium")
   
 
   #Compares house sentiment trends throughout the series by medium 
@@ -123,10 +127,11 @@ df %>%
     summarise(score = n/totalword) %>% 
     ungroup() %>% 
     mutate(title = factor(title, levels = c("Philosophers_Stone","Sorcerer_Stone","Chamber_Of_Secrets","Prisoner_Of_Azkaban","Prisonor_Of_Azk","Goblet_Of_Fire","Deathly_Hallows"))) %>% 
-    ggplot(aes(x = title, y = score, color = house, group = house)) + geom_line(size = 1) + facet_wrap(~medium + sentiment, scales = "free") + theme_economist()
+    ggplot(aes(x = title, y = score, color = house, group = house)) + geom_line(size = 1) + facet_wrap(~medium + sentiment, scales = "free") + theme_economist() +
+    ggtitle("Positive Negative Trends by House and Medium")
 
 
- #Pos neg words by house and title
+ #top 5 Pos neg words by house and title
   df %>% 
     filter(house != "No Entry") %>% 
     filter(!title %in% c("Half_Blood_Prince","Order_Of_The_Phoenix","Wiki")) %>% 
@@ -144,12 +149,12 @@ df %>%
     mutate(n = if_else(sentiment == "positive",n,-n)) %>%  
     mutate(word = reorder_within(word, n, title) )%>% 
     mutate(title = factor(title, levels = c("Philosophers_Stone","Sorcerer_Stone","Chamber_Of_Secrets","Prisoner_Of_Azkaban","Prisonor_Of_Azk","Goblet_Of_Fire","Deathly_Hallows"))) %>% 
-    ggplot(aes(x = word, y = n, fill = sentiment)) +
+    ggplot(aes(x = reorder_within(word, n, house), y = n, fill = sentiment)) +
     geom_col() + 
     scale_x_reordered() +
     facet_wrap(house~title, scales = "free") +
     coord_flip() +
-    ggtitle("House Pos/Neg Word changes by Movie") + 
+    ggtitle("Top 5 Positive/Negative words by house and book") + 
     theme_economist() + 
     theme(legend.position = "top",
           legend.justification = "center",
@@ -171,10 +176,12 @@ df %>%
     ggplot(aes(x = word, y = tf_idf, color = house, fill = house)) + 
     geom_col() + 
     facet_wrap(~house, scales = "free") + 
-    coord_flip()
+    coord_flip() + 
+    theme_economist() + 
+    ggtitle("Top 5 tf-idf words by House")
   
 
-  
+#Top 10 characters and their top 5 positive negative words   
 df %>% 
   filter(house != "No Entry") %>% 
   inner_join( df %>% 
@@ -202,4 +209,38 @@ df %>%
   scale_x_reordered() + 
   facet_wrap(~name, scales = "free") + 
   coord_flip() + 
-  theme_economist()
+  theme_economist() + 
+  ggtitle("Top 5 positive/negative words by each character")
+
+
+#Comparing BOW and Tf-idf
+
+rbind(df %>% get_sentences() %>% 
+          unnest_tokens(word,"text") %>% 
+          select(house, word) %>% 
+          filter(!word %in% names) %>% 
+          filter(!word %in% stop_words$word) %>% 
+          count(house,word) %>% 
+          group_by(house) %>% 
+          top_n(n, n = 5) %>% 
+          rename("value" = n) %>% 
+          mutate(type = "bow"), 
+        df %>% get_sentences() %>% unnest_tokens(word, "text") %>% select(house,word) %>% 
+          filter(!word %in% names) %>% 
+          count(house,word) %>% 
+          bind_tf_idf(word, house,n) %>% 
+          select(house,word, tf_idf) %>% 
+          group_by(house) %>% 
+          top_n(tf_idf, n =5) %>% 
+          mutate(type = "tf-df") %>% 
+          rename("value" = tf_idf)) %>% 
+  ggplot(mapping = aes(x = reorder_within(word, value, house), 
+                       y = value, 
+                       color = house, 
+                       fill = house)) + 
+  geom_col() + 
+  scale_x_reordered() + 
+  facet_wrap(~house + type, scales = "free", ncol = 2) + 
+  coord_flip() + 
+  theme_economist() +
+  ggtitle("Bag of words vs Tf-idf")

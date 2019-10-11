@@ -8,10 +8,6 @@ The features consists of Book, House, Character, and Text
 *	Character - characters that are also separated by medium
 * Text - unprocessed sentences
 
-## Pre-Processing for Feature Engineering
-* The data will be separated to one sentence per observation 
-*	This will be done with get_sentences from the sentimentR package
-
 ## Feature Engineering 
 
 #### Bag of Words 

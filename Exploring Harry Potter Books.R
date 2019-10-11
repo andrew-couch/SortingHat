@@ -9,6 +9,7 @@ df <- df %>% mutate(medium = df$book %>% str_extract(pattern = paste(c("Book","M
 names <- df %>% separate(character, c("medium","character"), sep = "_") %>% select(character) %>% unique()
 names <- tolower(names$character)
 df <- df %>% separate(book, c("medium","title"), sep = "_", extra = "merge")
+df <- df %>% separate(character, c("medium","name"), remove = FALSE)
 
 #Comapres spoken words by house
 df %>% 
@@ -140,7 +141,7 @@ df %>%
     mutate(rank = rank(-n, ties.method = "first")) %>% 
     filter(rank <= 5) %>% 
     ungroup() %>% 
-    mutate(n = if_seelse(sentiment == "positive",n,-n)) %>%  
+    mutate(n = if_else(sentiment == "positive",n,-n)) %>%  
     mutate(word = reorder_within(word, n, title) )%>% 
     mutate(title = factor(title, levels = c("Philosophers_Stone","Sorcerer_Stone","Chamber_Of_Secrets","Prisoner_Of_Azkaban","Prisonor_Of_Azk","Goblet_Of_Fire","Deathly_Hallows"))) %>% 
     ggplot(aes(x = word, y = n, fill = sentiment)) +
@@ -171,3 +172,34 @@ df %>%
     geom_col() + 
     facet_wrap(~house, scales = "free") + 
     coord_flip()
+  
+
+  
+df %>% 
+  filter(house != "No Entry") %>% 
+  inner_join( df %>% 
+                select(name) %>% 
+                count(name) %>% 
+                top_n(n, n = 10) %>% 
+                select(name), by = ("name" = "name")) %>% 
+  get_sentences() %>% 
+  unnest_tokens(word, `text`) %>%
+  anti_join(stop_words) %>% 
+  inner_join(get_sentiments(lexicon = "bing")) %>%
+  select(name, word, sentiment) %>% 
+  group_by(name, word, sentiment) %>% 
+  count(sentiment) %>% 
+  group_by(name, sentiment) %>% 
+  top_n(n, n = 5) %>% 
+  arrange(name, sentiment, -n) %>% 
+  ungroup() %>% 
+  mutate(n = if_else(sentiment == "positive", n,-n)) %>% 
+  ggplot(mapping = aes(x = reorder_within(word, n, name), 
+                       y = n, 
+                       color = sentiment, 
+                       fill = sentiment)) + 
+  geom_col() + 
+  scale_x_reordered() + 
+  facet_wrap(~name, scales = "free") + 
+  coord_flip() + 
+  theme_economist()

@@ -87,12 +87,33 @@ trigramFeatures <- df %>%
 sentiments <- df %>% 
   get_sentences() %>% 
   select(character, text) %>% 
-  cbind(huliu <- sentences %>% sentiment(lexicon::hash_sentiment_huliu) %>% select(sentiment) %>% rename("huliu" = sentiment),jockers_rinker <- sentences %>% sentiment(lexicon::hash_sentiment_jockers_rinker) %>% select(sentiment) %>% rename("jockers_rinker" = sentiment),
-                    nrc <- sentences %>% sentiment(lexicon::hash_sentiment_nrc) %>% select(sentiment) %>% rename("nrc" = sentiment),
-                    senticnet <- sentences %>% sentiment(lexicon::hash_sentiment_senticnet) %>% select(sentiment) %>% rename("senticnet" = sentiment),
-                    sentiword <- sentences %>% sentiment(lexicon::hash_sentiment_sentiword) %>% select(sentiment) %>% rename("sentiword" = sentiment),
-                    slangsd <- sentences %>% sentiment(lexicon::hash_sentiment_slangsd) %>% select(sentiment) %>% rename("slangsd" = sentiment),
-                    socal_google <- sentences %>% sentiment(lexicon::hash_sentiment_socal_google) %>% select(sentiment) %>% rename("socal_google" = sentiment))
+  cbind(huliu <- sentences %>% 
+          sentiment(lexicon::hash_sentiment_huliu) %>% 
+          select(sentiment) %>% 
+          rename("huliu" = sentiment),jockers_rinker <- sentences %>% 
+          sentiment(lexicon::hash_sentiment_jockers_rinker) %>% 
+          select(sentiment) %>% 
+          rename("jockers_rinker" = sentiment),
+                    nrc <- sentences %>% 
+          (lexicon::hash_sentiment_nrc) %>% 
+          select(sentiment) %>% 
+          rename("nrc" = sentiment),
+                    senticnet <- sentences %>% 
+          sentiment(lexicon::hash_sentiment_senticnet) %>% 
+          select(sentiment) %>% 
+          rename("senticnet" = sentiment),
+                    sentiword <- sentences %>% 
+          sentiment(lexicon::hash_sentiment_sentiword) %>% 
+          select(sentiment) %>% 
+          rename("sentiword" = sentiment),
+                    slangsd <- sentences %>% 
+          sentiment(lexicon::hash_sentiment_slangsd) %>% 
+          select(sentiment) %>% 
+          rename("slangsd" = sentiment),
+                    socal_google <- sentences %>% 
+          sentiment(lexicon::hash_sentiment_socal_google) %>% 
+          select(sentiment) %>% 
+          rename("socal_google" = sentiment))
 
 
 #Finds average sentiment for each character
@@ -100,7 +121,7 @@ sentiments <-  sentiments %>%
   select(-text) %>% 
   gather(key = "sentiment", value = "score", -character) %>% 
   group_by(character, sentiment) %>% 
-  summarise(score = mean(score)) %>% 
+  summarise(score = mean(score)) %>% #Finds mean sentiment by sentences 
   spread(key = sentiment, value = score)
 
 
@@ -119,9 +140,10 @@ emotionFeatures <- df %>%
   left_join(df %>% 
               unnest_tokens(word, "text") %>% 
               group_by(character) %>% 
-              count(character, character), by = c("character" = "character")) %>% 
+              count(character, character), 
+            by = c("character" = "character")) %>% 
   gather(key = "sentiment", value = "score", -character, -n) %>% 
-  mutate(score = score/n) %>% 
+  mutate(score = score/n) %>% #Averages the sentiment by word count
   select(-n) %>% 
   spread(sentiment, score) %>% 
   rename("anger.emotion" = anger,

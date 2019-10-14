@@ -144,4 +144,7 @@ harrypotter <- df %>%
   left_join(bigramFeatures) %>% 
   left_join(trigramFeatures) %>% 
   left_join(sentiments) %>% 
-  left_join(emotionFeatures)
+  left_join(emotionFeatures) %>% 
+  map_df(replace_na, 0)
+
+#saveRDS(harrypotter, "harrypotter.rds")

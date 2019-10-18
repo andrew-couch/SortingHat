@@ -49,7 +49,7 @@ The features consists of Book, House, Character, and Text
 
 ## Model List
 #### Multinomial Logistic Regression
-* method = logreg
+* method = multinom
 
 #### Naive Bayes Classifier
 * method = naive_bayes

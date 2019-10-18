@@ -55,10 +55,10 @@ The features consists of Book, House, Character, and Text
 * method = naive_bayes
 
 #### Regularized Logistic Regression (L1)
-* method = PenalizedLDA
+* method = glmnet (Alpha = 1)
 
 #### Penalized Logistic Regression (L2)
-* method = plr
+* method = glmnet (Alpha = 0)
 
 #### Elastic Net
 * method = glmnet

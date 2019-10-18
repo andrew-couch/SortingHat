@@ -30,7 +30,7 @@ The features consists of Book, House, Character, and Text
 
 #### Sentiment Lexicon
 * Sentiment will be measured for each character 
-* Multiple lexicons will be used 
+* Multiple lexicons will be used (Huliu, Jockers Rinker, NRC, Senticnet, Sentiword, SlangSD, Socal Google, and NRC emotions)
 * The sentiment will be measured by setence level however, will be averaged for each character
 * The averaging is done through simple averaging instead of weighted average
 
@@ -43,7 +43,7 @@ The features consists of Book, House, Character, and Text
 ## Modeling
 *	The model will be a multiclass classification problem 
 *	Multiple models will be created and once tuned, will be ensembled 
-*	Models will range from simple logistic regression model to Recurrent Neural Network
+*	Models will range from simple logistic regression model to a Recurrent Neural Network
 *	Models will be created using caret and keras
 * Model ensembling will be done using majority vote 
 
@@ -55,7 +55,7 @@ The features consists of Book, House, Character, and Text
 * method = naive_bayes
 
 #### Regularized Logistic Regression (L1)
-* method = reglogistic
+* method = PenalizedLDA
 
 #### Penalized Logistic Regression (L2)
 * method = plr

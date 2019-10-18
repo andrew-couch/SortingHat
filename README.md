@@ -49,7 +49,7 @@ The features consists of Book, House, Character, and Text
 
 ## Model List
 #### Multinomial Logistic Regression
-* method = logreg
+* method = multinom
 
 #### Naive Bayes Classifier
 * method = naive_bayes
@@ -66,7 +66,7 @@ The features consists of Book, House, Character, and Text
 #### Multivariate Adaptive Regression Spline
 * method = earth
 
-#### Random Forest
+#### Random Forest (Completed)
 * method = rf
 
 #### Support Vector Machine

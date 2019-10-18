@@ -66,7 +66,7 @@ The features consists of Book, House, Character, and Text
 #### Multivariate Adaptive Regression Spline
 * method = earth
 
-#### Random Forest
+#### Random Forest (Completed)
 * method = rf
 
 #### Support Vector Machine

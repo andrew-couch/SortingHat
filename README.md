@@ -69,7 +69,7 @@ The features consists of Book, House, Character, and Text
 #### Random Forest (Completed)
 * method = rf
 
-#### Support Vector Machine
+#### Support Vector Machine (Completed)
 * method = svmLinear
 
 #### Extreme Gradient Boosting

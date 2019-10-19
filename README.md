@@ -63,7 +63,7 @@ The features consists of Book, House, Character, and Text
 #### Elastic Net (Completed)
 * method = glmnet
 
-#### Multivariate Adaptive Regression Spline
+#### Multivariate Adaptive Regression Spline (Completed)
 * method = earth
 
 #### Random Forest (Completed)

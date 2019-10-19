@@ -138,7 +138,7 @@ PCABoxCoxElasticNetModel <- train(Class~.,
 BaseLineCenterScaleL1BaseLineModel <- train(Class~., 
                                        data = modelData, 
                                        method = "glmnet", 
-                                       preProc = c("center","scale", "pca"),
+                                       preProc = c("center","scale"),
                                        tuneGrid = expand.grid(alpha = 1, 
                                                               lambda = 10^seq(-3,3, length = 100)),
                                        trControl = trainControl(method = "repeatedcv", 
@@ -147,7 +147,7 @@ BaseLineCenterScaleL1BaseLineModel <- train(Class~.,
 BaseLineCenterScaleL2BaseLineModel <- train(Class~., 
                                        data = modelData, 
                                        method = "glmnet", 
-                                       preProc = c("center","scale", "pca"),
+                                       preProc = c("center","scale"),
                                        tuneGrid = expand.grid(alpha = 0, 
                                                               lambda = 10^seq(-3,3, length = 100)),
                                        trControl = trainControl(method = "repeatedcv", 
@@ -156,7 +156,7 @@ BaseLineCenterScaleL2BaseLineModel <- train(Class~.,
 BaseLineBoxCoxElasticNetModel <- train(Class~., 
                                   data = modelData, 
                                   method = "glmnet",
-                                  preProc = c("BoxCox", "pca"),
+                                  preProc = c("BoxCox"),
                                   tuneLength = 20,
                                   trControl = trainControl(method = "repeatedcv", 
                                                            repeats = 10, 
@@ -168,3 +168,82 @@ FinalL1Comp <- resamples(list("PCA" = PCACenterScaleL1BaseLineModel, "L1" = Base
 FinalL2Comp <- resamples(list("PCA" = PCACenterScaleL2BaseLineModel, "L2" = BaseLineCenterScaleL2BaseLineModel))
 FinalElasticComp <- resamples(list("PCA" = PCABoxCoxElasticNetModel, "Elastic" = BaseLineBoxCoxElasticNetModel))
 
+BaseLineBoxCoxElasticNetModel
+BaseLineCenterScaleL1BaseLineModel
+BaseLineCenterScaleL2BaseLineModel
+
+varImp(BaseLineCenterScaleL1BaseLineModel)
+varImp(BaseL)
+
+
+cl <- makePSOCKcluster(7)
+registerDoParallel(cl)
+
+BaseLineCenterScaleL1BaseLineModel <- train(Class~., 
+                                            data = modelData, 
+                                            method = "glmnet", 
+                                            preProc = c("center","scale"),
+                                            tuneGrid = expand.grid(alpha = 1, 
+                                                                   lambda = 10^seq(-3,3, length = 100)),
+                                            trControl = trainControl(method = "repeatedcv", 
+                                                                     repeats = 10, 
+                                                                     number = 10))
+BaseLineCenterScaleL2BaseLineModel <- train(Class~., 
+                                            data = modelData, 
+                                            method = "glmnet", 
+                                            preProc = c("center","scale"),
+                                            tuneGrid = expand.grid(alpha = 0, 
+                                                                   lambda = 10^seq(-3,3, length = 100)),
+                                            trControl = trainControl(method = "repeatedcv", 
+                                                                     repeats = 10, 
+                                                                     number = 10))
+BaseLineBoxCoxElasticNetModel <- train(Class~., 
+                                       data = modelData, 
+                                       method = "glmnet",
+                                       preProc = c("BoxCox"),
+                                       tuneLength = 20,
+                                       trControl = trainControl(method = "repeatedcv", 
+                                                                repeats = 10, 
+                                                                number = 10))
+
+stopCluster(cl)
+
+FinalL1Comp <- resamples(list("PCA" = PCACenterScaleL1BaseLineModel, "L1" = BaseLineCenterScaleL1BaseLineModel))
+FinalL2Comp <- resamples(list("PCA" = PCACenterScaleL2BaseLineModel, "L2" = BaseLineCenterScaleL2BaseLineModel))
+FinalElasticComp <- resamples(list("PCA" = PCABoxCoxElasticNetModel, "Elastic" = BaseLineBoxCoxElasticNetModel))
+
+
+summary(FinalL1Comp)
+summary(FinalL2Comp)
+summary(FinalElasticComp)
+
+L1Test <- BaseLineCenterScaleL1BaseLineModel %>% 
+  predict(df) %>% 
+  cbind(df$TargetHouse) %>% 
+  as.data.frame() %>% 
+  rename(.,"Prediction" = ., "Actual" = V2) %>% 
+  mutate(Correct = if_else(Prediction == Actual, "Correct", "Wrong"))
+
+L2Test <- BaseLineCenterScaleL2BaseLineModel %>% 
+  predict(df) %>% 
+  cbind(df$TargetHouse) %>% 
+  as.data.frame() %>% 
+  rename(.,"Prediction" = ., "Actual" = V2) %>% 
+  mutate(Correct = if_else(Prediction == Actual, "Correct", "Wrong"))
+
+ElasticTest <- BaseLineBoxCoxElasticNetModel %>% 
+  predict(df) %>% 
+  cbind(df$TargetHouse) %>% 
+  as.data.frame() %>% 
+  rename(.,"Prediction" = ., "Actual" = V2) %>% 
+  mutate(Correct = if_else(Prediction == Actual, "Correct", "Wrong"))
+
+L1Test %>% filter(Correct == "Correct") %>% nrow() / nrow(df)
+L2Test %>% filter(Correct == "Correct") %>% nrow() / nrow(df)
+ElasticTest %>% filter(Correct == "Correct") %>% nrow() / nrow(df)
+
+saveRDS(BaseLineCenterScaleL1BaseLineModel, "L1Model.rds")
+saveRDS(BaseLineCenterScaleL2BaseLineModel, "L2Model.rds")
+saveRDS(BaseLineBoxCoxElasticNetModel, "ElasticNetModel.rds")
+
+regComp <- resamples(list("L1" = BaseLineCenterScaleL1BaseLineModel, "L2" = BaseLineCenterScaleL2BaseLineModel, "ELastic Net" = BaseLineBoxCoxElasticNetModel))

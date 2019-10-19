@@ -54,13 +54,13 @@ The features consists of Book, House, Character, and Text
 #### Naive Bayes Classifier (Completed)
 * method = naive_bayes
 
-#### Regularized Logistic Regression (L1)
+#### Regularized Logistic Regression (L1) (Completed)
 * method = glmnet (Alpha = 1)
 
-#### Penalized Logistic Regression (L2)
+#### Penalized Logistic Regression (L2) (Completed)
 * method = glmnet (Alpha = 0)
 
-#### Elastic Net
+#### Elastic Net (Completed)
 * method = glmnet
 
 #### Multivariate Adaptive Regression Spline

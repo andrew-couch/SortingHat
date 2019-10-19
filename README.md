@@ -48,10 +48,10 @@ The features consists of Book, House, Character, and Text
 * Model ensembling will be done using majority vote 
 
 ## Model List
-#### Multinomial Logistic Regression
-* method = multinom
+#### Multinomial Logistic Regression (Completed)
+* method = LogitBoost
 
-#### Naive Bayes Classifier
+#### Naive Bayes Classifier (Completed)
 * method = naive_bayes
 
 #### Regularized Logistic Regression (L1)

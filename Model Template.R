@@ -11,12 +11,59 @@ trainIndex <- createDataPartition(modelData$Class, p = .8, list = FALSE)
 trainData <- modelData[trainIndex,]
 testData <- modelData[-trainIndex,]
 
+testAccuracy <- function (model) {
+  model %>% 
+    predict(df) %>% 
+    cbind(df$TargetHouse) %>% 
+    as.data.frame() %>% 
+    rename(., "Predicted" = ., "Actual" = V2) %>% 
+    mutate(Correct = if_else(Actual == Predicted, "Correct", "Wrong")) %>% 
+    filter(Correct == "Correct") %>%
+    nrow() / nrow(df)
+}
+
+
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 
-baseLineModel <- train(Class~., data = trainData, method = "earth", 
+baseLineModel <- train(Class~., 
+                       data = trainData, 
+                       method = "earth", 
                        trControl = trainControl(method = "repeatedcv", 
                                                 repeats = 10, 
                                                 number = 10, 
                                                 allowParallel = T))
+boxCoxModel <- train(Class~., 
+                     data = trainData,
+                     method = "knn", 
+                     preProc = c("BoxCox"),
+                     trControl = trainControl(method = "repeatedcv", 
+                                              repeats = 10, 
+                                              number = 10, 
+                                              allowParallel = T))
+YeoJohnsonModel <- train(Class~., 
+                         data = trainData,
+                         method = "knn", 
+                         preProc = c("YeoJohnson"),
+                         trControl = trainControl(method = "repeatedcv", 
+                                                  repeats = 10, 
+                                                  number = 10, 
+                                                  allowParallel = T))
+
+CenterScaleModel <- train(Class~., 
+                          data = trainData,
+                          method = "knn", 
+                          preProc = c("center","scale"),
+                          trControl = trainControl(method = "repeatedcv", 
+                                                   repeats = 10, 
+                                                   number = 10, 
+                                                   allowParallel = T))
 stopCluster(cl)
+
+samplingComparison <- resamples(list("BoxCox" = boxCoxModel, "YeoJohnson" = YeoJohnsonModel, "CenterScale" = CenterScaleModel, "BaseLine" = baseLineModel))
+summary(samplingComparison)
+
+testAccuracy(baseLineModel)
+testAccuracy(boxCoxModel)
+testAccuracy(YeoJohnsonModel)
+testAccuracy(CenterScaleModel)

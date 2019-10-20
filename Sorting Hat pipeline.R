@@ -4,8 +4,13 @@ library(tidytext)
 library(sentimentr)
 library(tidyverse)
 library(ggradar)
+library(doParallel)
 
-userName <- "_AndrewCouch"
+
+cl <- makePSOCKcluster(7)
+registerDoParallel(cl)
+StartTime <- Sys.time()
+userName <- "TheAtlantic"
 
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
 bigram <- read.csv("bigramlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -105,6 +110,7 @@ emotionFeatures <- sentences %>%
 df <- cbind(bowFeatures, bigramFeatures, trigramFeatures, sentiments, emotionFeatures)
 
 
+
 LogisticRegressionModel <- readRDS("LogisticRegressionModel.rds")
 NaiveBayesModel <- readRDS("NaiveBayesModel.rds")
 L1Model <- readRDS("L1Model.rds")
@@ -128,8 +134,9 @@ predict(SVMModel, df)
 
 HarryPotterHouse <- data.frame("House" = c("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin"),
                                "HouseKey" = c(1,2,3,4))
+ModelList <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM") %>% as.data.frame() %>% rename(.,"Models" = .)
 
-HousePredictions <- rbind(predict(LogisticRegressionModel, df),
+ModelPredictions <- rbind(predict(LogisticRegressionModel, df),
       predict(NaiveBayesModel, df),
       predict(L1Model, df),
       predict(L2Model,df),
@@ -140,13 +147,15 @@ HousePredictions <- rbind(predict(LogisticRegressionModel, df),
       predict(SVMModel, df)) %>% 
   as.data.frame() %>% 
   rename("House" = V1) %>% 
-  group_by(House) %>% 
-  count(House) %>% 
+  cbind(ModelList)
+  
+HousePredictions <- ModelPredictions %>% 
+  count(House, House) %>% 
   right_join(HarryPotterHouse, by = c("House" = "HouseKey")) %>% 
   mutate(n = ifelse(is.na(n),0,n)) %>% 
   rename("HouseKey" = House, "n" = n, "House" = House.y) %>% 
   ungroup() %>% 
-  select(House, n)
+  select(House,n)
 
 HousePredictions %>% 
   mutate(n = n/sum(n)) %>% 
@@ -155,4 +164,8 @@ HousePredictions %>%
   column_to_rownames("name") %>% 
   ungroup() %>% 
   as_tibble(rownames = "name") %>% 
-  ggradar()
+  ggradar() 
+
+stopCluster(cl)
+EndTime <- Sys.time()
+StartTime - EndTime

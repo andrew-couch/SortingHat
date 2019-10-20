@@ -2,6 +2,7 @@ library(tidyverse)
 library(rtweet)
 library(tidytext)
 library(sentimentr)
+library(scales)
 
 userName <- "_AndrewCouch"
 
@@ -104,3 +105,47 @@ df <- cbind(bowFeatures, bigramFeatures, trigramFeatures, sentiments, emotionFea
 
 
 LogisticRegressionModel <- readRDS("LogisticRegressionModel.rds")
+NaiveBayesModel <- readRDS("NaiveBayesModel.rds")
+L1Model <- readRDS("L1Model.rds")
+L2Model <- readRDS("L2Model.rds")
+ElasticNetModel <- readRDS("ElasticNetModel.rds")
+MARSModel <- readRDS("MARSModel.rds")
+KnnModel <- readRDS("KnnModel.rds")
+RandomForestModel <- readRDS("RandomForestModel.rds")
+SVMModel <- readRDS("SupportVectorMachineModel.rds")
+
+predict(LogisticRegressionModel, df)
+predict(NaiveBayesModel, df)
+predict(L1Model, df)
+predict(L2Model,df)
+predict(ElasticNetModel, df)
+predict(MARSModel, df)
+predict(KnnModel, df)
+predict(RandomForestModel, df)
+predict(SVMModel, df)
+
+
+HarryPotterHouse <- data.frame("House" = c("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin"),
+                               "HouseKey" = c(1,2,3,4))
+
+HousePredictions <- rbind(predict(LogisticRegressionModel, df),
+      predict(NaiveBayesModel, df),
+      predict(L1Model, df),
+      predict(L2Model,df),
+      predict(ElasticNetModel, df),
+      predict(MARSModel, df),
+      predict(KnnModel, df),
+      predict(RandomForestModel, df),
+      predict(SVMModel, df)) %>% 
+  as.data.frame() %>% 
+  rename("House" = V1) %>% 
+  group_by(House) %>% 
+  count(House) %>% 
+  right_join(HarryPotterHouse, by = c("House" = "HouseKey")) %>% 
+  mutate(n = ifelse(is.na(n),0,n)) %>% 
+  rename("HouseKey" = House, "n" = n, "House" = House.y) %>% 
+  ungroup() %>% 
+  select(House, n)
+
+HousePredictions %>% ggplot(aes(x = House, y = n, fill = House )) + geom_col() + coord_polar()
+HousePredictions %>% mutate(Percentage = paste(round(100*n / sum(n),2), "%", sep = ""))

@@ -45,7 +45,7 @@ The features consists of Book, House, Character, and Text
 *	Multiple models will be created and once tuned, will be ensembled 
 *	Models will range from simple logistic regression model to a Recurrent Neural Network
 *	Models will be created using caret and keras
-* Model ensembling will be done using majority vote 
+* Model ensembling will be done through stacking with Xgboost
 
 ## Model List
 #### Multinomial Logistic Regression (Completed)

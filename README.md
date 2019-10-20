@@ -66,7 +66,7 @@ The features consists of Book, House, Character, and Text
 #### Multivariate Adaptive Regression Spline (Completed)
 * method = earth
 
-#### K-Nearest Neighbor
+#### K-Nearest Neighbor (Completed)
 * method = knn
 
 #### Random Forest (Completed)

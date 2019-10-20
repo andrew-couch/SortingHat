@@ -2,7 +2,8 @@ library(tidyverse)
 library(rtweet)
 library(tidytext)
 library(sentimentr)
-library(scales)
+library(tidyverse)
+library(ggradar)
 
 userName <- "_AndrewCouch"
 
@@ -147,5 +148,11 @@ HousePredictions <- rbind(predict(LogisticRegressionModel, df),
   ungroup() %>% 
   select(House, n)
 
-HousePredictions %>% ggplot(aes(x = House, y = n, fill = House )) + geom_col() + coord_polar()
-HousePredictions %>% mutate(Percentage = paste(round(100*n / sum(n),2), "%", sep = ""))
+HousePredictions %>% 
+  mutate(n = n/sum(n)) %>% 
+  spread(House,n) %>% 
+  mutate(name = userName) %>% 
+  column_to_rownames("name") %>% 
+  ungroup() %>% 
+  as_tibble(rownames = "name") %>% 
+  ggradar()

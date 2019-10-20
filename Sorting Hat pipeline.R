@@ -2,14 +2,13 @@ library(tidyverse)
 library(rtweet)
 library(tidytext)
 library(sentimentr)
-library(tidyverse)
 library(ggradar)
 library(doParallel)
-
 
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 StartTime <- Sys.time()
+
 userName <- "TheAtlantic"
 
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -109,8 +108,6 @@ emotionFeatures <- sentences %>%
 
 df <- cbind(bowFeatures, bigramFeatures, trigramFeatures, sentiments, emotionFeatures)
 
-
-
 LogisticRegressionModel <- readRDS("LogisticRegressionModel.rds")
 NaiveBayesModel <- readRDS("NaiveBayesModel.rds")
 L1Model <- readRDS("L1Model.rds")
@@ -120,17 +117,6 @@ MARSModel <- readRDS("MARSModel.rds")
 KnnModel <- readRDS("KnnModel.rds")
 RandomForestModel <- readRDS("RandomForestModel.rds")
 SVMModel <- readRDS("SupportVectorMachineModel.rds")
-
-predict(LogisticRegressionModel, df)
-predict(NaiveBayesModel, df)
-predict(L1Model, df)
-predict(L2Model,df)
-predict(ElasticNetModel, df)
-predict(MARSModel, df)
-predict(KnnModel, df)
-predict(RandomForestModel, df)
-predict(SVMModel, df)
-
 
 HarryPotterHouse <- data.frame("House" = c("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin"),
                                "HouseKey" = c(1,2,3,4))

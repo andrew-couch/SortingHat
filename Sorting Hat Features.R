@@ -84,33 +84,32 @@ trigramFeatures <- df %>%
 
 
 #sentiment lexicon engineering 
-sentiments <- df %>% 
-  get_sentences() %>% 
-  select(character, text) %>% 
-  cbind(huliu <- sentences %>% 
+sentences <- df %>% get_sentences()
+sentiments <- cbind(sentences %>% 
           sentiment(lexicon::hash_sentiment_huliu) %>% 
           select(sentiment) %>% 
-          rename("huliu" = sentiment),jockers_rinker <- sentences %>% 
+          rename("huliu" = sentiment),
+          sentences %>% 
           sentiment(lexicon::hash_sentiment_jockers_rinker) %>% 
           select(sentiment) %>% 
           rename("jockers_rinker" = sentiment),
-                    nrc <- sentences %>% 
-          (lexicon::hash_sentiment_nrc) %>% 
+          sentences %>% 
+          sentiment(lexicon::hash_sentiment_nrc) %>% 
           select(sentiment) %>% 
           rename("nrc" = sentiment),
-                    senticnet <- sentences %>% 
+          sentences %>% 
           sentiment(lexicon::hash_sentiment_senticnet) %>% 
           select(sentiment) %>% 
           rename("senticnet" = sentiment),
-                    sentiword <- sentences %>% 
+                    sentences %>% 
           sentiment(lexicon::hash_sentiment_sentiword) %>% 
           select(sentiment) %>% 
           rename("sentiword" = sentiment),
-                    slangsd <- sentences %>% 
+                    sentences %>% 
           sentiment(lexicon::hash_sentiment_slangsd) %>% 
           select(sentiment) %>% 
           rename("slangsd" = sentiment),
-                    socal_google <- sentences %>% 
+                    sentences %>% 
           sentiment(lexicon::hash_sentiment_socal_google) %>% 
           select(sentiment) %>% 
           rename("socal_google" = sentiment))

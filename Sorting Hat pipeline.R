@@ -9,7 +9,7 @@ cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 StartTime <- Sys.time()
 
-userName <- "TheAtlantic"
+userName <- "_AndrewCouch"
 
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
 bigram <- read.csv("bigramlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -119,35 +119,31 @@ RandomForestModel <- readRDS("RandomForestModel.rds")
 SVMModel <- readRDS("SupportVectorMachineModel.rds")
 EnsembleModel <- readRDS("EnsembleModel.rds")
 
-ensembleData <- cbind(predict(LogisticRegressionModel, testData),
-                          predict(NaiveBayesModel, testData),
-                          predict(L1Model, testData),
-                          predict(L2Model,testData),
-                          predict(ElasticNetModel, testData),
-                          predict(MARSModel, testData),
-                          predict(KnnModel, testData),
-                          predict(RandomForestModel, testData),
-                          predict(SVMModel, testData))
+
+ensembleData <- cbind(predict(LogisticRegressionModel, df),
+                          predict(NaiveBayesModel, df),
+                          predict(L1Model, df),
+                          predict(L2Model,df),
+                          predict(ElasticNetModel, df),
+                          predict(MARSModel, df),
+                          predict(KnnModel, df),
+                          predict(RandomForestModel, df),
+                          predict(SVMModel, df)) %>% as.data.frame()
+colnames(ensembleData) <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM")
+
+predict(LogisticRegressionModel, df)
 
 HousePrediction <- predict(EnsembleModel, ensembleData, type = "prob")
-
-HousePredictions <- ModelPredictions %>% 
-  count(House, House) %>% 
-  right_join(HarryPotterHouse, by = c("House" = "HouseKey")) %>% 
-  mutate(n = ifelse(is.na(n),0,n)) %>% 
-  rename("HouseKey" = House, "n" = n, "House" = House.y) %>% 
-  ungroup() %>% 
-  select(House,n)
-
-HousePredictions %>% 
-  mutate(n = n/sum(n)) %>% 
-  spread(House,n) %>% 
-  mutate(name = userName) %>% 
-  column_to_rownames("name") %>% 
-  ungroup() %>% 
-  as_tibble(rownames = "name") %>% 
-  ggradar() 
+colnames(HousePrediction) <- c("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin")
 
 stopCluster(cl)
 EndTime <- Sys.time()
 StartTime - EndTime
+
+HousePrediction %>% mutate(Name = userName) %>%
+  column_to_rownames("Name") %>% 
+  ungroup() %>% 
+  as_tibble(rownames = "Name") %>% 
+  ggradar()
+
+HousePrediction

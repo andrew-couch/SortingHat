@@ -19,7 +19,7 @@ registerDoParallel(cl)
 StartTime <- Sys.time()
 
 #Twitter username for sorting hat 
-userName <- "_andrewcouch"
+userName <- "username"
 
 #Reads in Document Term Matrix
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -168,7 +168,20 @@ StartTime - EndTime
 #Plots predictions as probabilities/percentage 
 HousePrediction %>% 
   gather(key = "House", value = "Percentage") %>% 
-  ggplot(aes(x = House, y = Percentage, color = House, fill = House)) + geom_col() + 
-  scale_y_continuous(labels = scales::percent) + ggtitle(paste(userName, "'s House Assignment", sep = "")) + theme(plot.title = element_text(hjust = .5)) + theme_economist()
+  ggplot(aes(x = House, 
+             y = Percentage, 
+             color = House, 
+             fill = House)) + 
+  geom_col() + 
+  scale_y_continuous(labels = scales::percent) + 
+  ggtitle(paste(userName, "'s House Assignment", sep = "")) + 
+  theme(plot.title = element_text(hjust = .5)) + 
+  theme_economist()
 
-HousePrediction
+HousePrediction %>% 
+  mutate("Name" = userName) %>%
+  write.table("SortingHatList.csv",
+              row.names = FALSE, 
+              col.names = FALSE, 
+              sep = ",",
+              append = TRUE)

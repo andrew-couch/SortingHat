@@ -4,12 +4,13 @@ library(tidytext)
 library(sentimentr)
 library(ggradar)
 library(doParallel)
+library(caret)
 
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 StartTime <- Sys.time()
 
-userName <- "_AndrewCouch"
+userName <- "gtconway3d"
 
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
 bigram <- read.csv("bigramlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -128,10 +129,10 @@ ensembleData <- cbind(predict(LogisticRegressionModel, df),
                           predict(MARSModel, df),
                           predict(KnnModel, df),
                           predict(RandomForestModel, df),
-                          predict(SVMModel, df)) %>% as.data.frame()
-colnames(ensembleData) <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM")
+                          predict(SVMModel,df)) %>% 
+  as.data.frame()
 
-predict(LogisticRegressionModel, df)
+colnames(ensembleData) <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM")
 
 HousePrediction <- predict(EnsembleModel, ensembleData, type = "prob")
 colnames(HousePrediction) <- c("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin")

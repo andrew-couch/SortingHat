@@ -95,11 +95,27 @@ registerDoParallel(cl)
 RandomForestModel <- train(Class~., 
                            data = hpUp, 
                            method = "rf",
-                           preProc = c("YeoJohnson","pca"),
-                           trControl = trainControl(method = "repeatedcv",
-                                                    repeats = 10, 
-                                                    number = 10))
+                           preProc = c("YeoJohnson"))
 stopCluster(cl)
 
+
+
+df <- readRDS("harrypotter.rds")
+df <- df %>% select(-character)
+df$TargetHouse <- as.factor(df$TargetHouse)
+
+testAccuracy <- function (model) {
+  model %>% 
+    predict(df) %>% 
+    cbind(df$TargetHouse) %>% 
+    as.data.frame() %>% 
+    rename(., "Predicted" = ., "Actual" = V2) %>% 
+    mutate(Correct = if_else(Actual == Predicted, "Correct", "Wrong")) %>% 
+    filter(Correct == "Correct") %>%
+    nrow() / nrow(df)
+}
 RandomForestModel
+RandomForestModel %>% confusionMatrix()
+testAccuracy(RandomForestModel)
+
 saveRDS(RandomForestModel, "RandomForestModel.rds")

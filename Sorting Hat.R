@@ -10,7 +10,7 @@ library(rtweet)
 library(tidytext)
 library(sentimentr)
 library(doParallel)
-library(caret)
+library(ggrepel)
 library(ggthemes)
 
 #Enables parallel computing for faster compile times
@@ -19,7 +19,7 @@ registerDoParallel(cl)
 StartTime <- Sys.time()
 
 #Twitter username for sorting hat 
-userName <- "username"
+userName <- "Walmart"
 
 #Reads in Document Term Matrix
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -185,3 +185,37 @@ HousePrediction %>%
               col.names = FALSE, 
               sep = ",",
               append = TRUE)
+
+sortedList <- read.csv("SortingHatList.csv")
+sortedList
+exampleNames <- sortedList %>% 
+  gather(key = "house", value = "value", -Name) %>% 
+  group_by(Name) %>% 
+  top_n(value, n =1) %>% 
+  select(Name, house) %>% 
+  inner_join(sortedList) %>% 
+  mutate(x = Hufflepuff - Ravenclaw, 
+         y = Gryffindor - Slytherin) %>%
+  select(Name, x , y, house) %>% 
+  filter(Name %in% c("Book_Harry", "Book_Malfoy" ,userName))
+
+sortedList %>% 
+  gather(key = "house", value = "value", -Name) %>% 
+  group_by(Name) %>% 
+  top_n(value, n =1) %>% 
+  select(Name, house) %>% 
+  inner_join(sortedList) %>% 
+  mutate(x = Hufflepuff - Ravenclaw, 
+         y = Gryffindor - Slytherin) %>%
+  select(Name, x , y, house) %>% 
+  ggplot(aes(x = x, y = y, label = Name)) + 
+  geom_vline(xintercept = 0, linetype = "dashed", alpha = .5) + 
+  geom_hline(yintercept = 0, linetype = "dashed", alpha = .5) +
+  geom_point(aes(color = house)) + 
+  ylab(expression("More likely Slytherin  " %<->% " More likely Gryffindor")) +
+  xlab(expression("More likely Ravenclaw  " %<->% " More likely Hufflepuff")) + 
+  geom_text_repel(data = exampleNames, 
+                  mapping = aes(x = x, y = y, label = Name),
+                  nudge_x = .1) +
+  theme_fivethirtyeight() +
+  theme(aspect.ratio = 1)

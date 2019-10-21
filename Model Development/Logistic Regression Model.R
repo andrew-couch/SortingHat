@@ -1,78 +1,59 @@
 library(tidyverse)
 library(caret)
 library(doParallel)
+library(beepr)
 
 df <- readRDS("harrypotter.rds")
-df$character <- NULL
+df <- df %>% select(-character)
 df$TargetHouse <- as.factor(df$TargetHouse)
 
-modelData <- upSample(x = df[,2:285], y = df$TargetHouse)
+modelData <- upSample(x = df %>% select(-TargetHouse), y = df$TargetHouse)
+
+testAccuracy <- function (model) {
+  model %>% 
+    predict(df) %>% 
+    cbind(df$TargetHouse) %>% 
+    as.data.frame() %>% 
+    rename(., "Predicted" = ., "Actual" = V2) %>% 
+    mutate(Correct = if_else(Actual == Predicted, "Correct", "Wrong")) %>% 
+    filter(Correct == "Correct") %>%
+    nrow() / nrow(df)
+}
+
 
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 
-BoostedLogisticRegression <- train(Class~., 
+baseLineModel <- train(Class~., 
                        data = modelData, 
-                       method = 'LogitBoost', 
-                       trControl = trainControl(method = "repeatedcv", 
-                                                repeats = 10, 
-                                                number = 10))
-
+                       method = "bayesglm")
+beep(3)
 stopCluster(cl)
 
+#saveRDS(baseLineModel, "LogisticRegressionModel.rds")
+
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 
-BoxCoxModel <- train(Class~., 
-     data = modelData, 
-     method = 'LogitBoost', 
-     preProc = c("BoxCox"),
-     trControl = trainControl(method = "repeatedcv", 
-                              repeats = 10, 
-                              number = 10))
+boxCoxModel <- train(Class~., 
+                     data = trainData,
+                     method = "gpls", 
+                     preProc = c("BoxCox"))
 YeoJohnsonModel <- train(Class~., 
-                         data = modelData, 
-                         method = 'LogitBoost', 
-                         preProc = c("YeoJohnson"),
-                         trControl = trainControl(method = "repeatedcv", 
-                                                  repeats = 10, 
-                                                  number = 10))
+                         data = trainData,
+                         method = "gpls", 
+                         preProc = c("YeoJohnson"))
 
-CenterScale <- train(Class~., 
-                     data = modelData, 
-                     method = 'LogitBoost', 
-                     preProc = c("center","scale"),
-                     trControl = trainControl(method = "repeatedcv", 
-                                              repeats = 10, 
-                                              number = 10))
-
+CenterScaleModel <- train(Class~., 
+                          data = trainData,
+                          method = "gpls", 
+                          preProc = c("center","scale"))
 stopCluster(cl)
 
-BoxCoxModel
-YeoJohnsonModel
-CenterScale
+samplingComparison <- resamples(list("BoxCox" = boxCoxModel, "YeoJohnson" = YeoJohnsonModel, "CenterScale" = CenterScaleModel, "BaseLine" = baseLineModel))
+summary(samplingComparison)
 
-scalingList <- resamples(list("BoxCox" = BoxCoxModel, "YeoJohnson" = YeoJohnsonModel, "CenterScale" = CenterScale))
-summary(scalingList)
-bwplot(scalingList)
-dotplot(scalingList)
-
-cl <- makePSOCKcluster(7)
-registerDoParallel(cl)
-
-PCAYeoJohnson <- train(Class~., 
-                       data = modelData, 
-                       method = 'LogitBoost', 
-                       preProc = c("YeoJohnson", "pca"),
-                       trControl = trainControl(method = "repeatedcv", 
-                                                repeats = 10, 
-                                                number = 10))
-stopCluster(cl)
-
-PCAYeoJohnson
-comparison <- resamples(list("YeoJohnson" = YeoJohnsonModel, "PCA" = YeoJohnsonModel))
-
-summary(comparison)
-dotplot(comparison)
-
-saveRDS(YeoJohnsonModel, "LogisticRegressionModel.rds")
+testAccuracy(baseLineModel)
+testAccuracy(boxCoxModel)
+testAccuracy(YeoJohnsonModel)
+testAccuracy(CenterScaleModel)

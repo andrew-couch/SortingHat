@@ -1,4 +1,5 @@
 library(tidyverse)
+library(caret)
 
 df <- readRDS("harrypotter.rds")
 
@@ -85,3 +86,53 @@ results %>% group_by(n) %>%
   filter(correct == "wrong") %>% 
   ggplot(aes(x = value , y = Actual)) + 
   geom_jitter(width = 0, height = .1, alpha = .5)
+
+
+df <- df %>% select(-character)
+df$TargetHouse <- as.factor(df$TargetHouse)
+modelData <- upSample(df %>% select(-TargetHouse), df$TargetHouse)
+
+
+ensembleData <- cbind(predict(NaiveBayesModel, modelData),
+                 predict(L1Model, modelData),
+                 predict(L2Model,modelData),
+                 predict(ElasticNetModel, modelData),
+                 predict(MARSModel, modelData),
+                 predict(KnnModel, modelData),
+                 predict(RandomForestModel, modelData),
+                 predict(SVMModel, modelData), modelData$Class) %>% 
+  as.data.frame()
+
+
+ensembleData$V9 <- as.factor(ensembleData$V9)
+ensembleModel <- train(V9~., data = ensembleData, method = "xgbLinear")
+
+
+
+ensembleModel %>% varImp()
+
+testData <- cbind(predict(NaiveBayesModel, df),
+                  predict(L1Model, df),
+                  predict(L2Model,df),
+                  predict(ElasticNetModel, df),
+                  predict(MARSModel, df),
+                  predict(KnnModel, df),
+                  predict(RandomForestModel, df),
+                  predict(SVMModel, df)) %>% 
+  as.data.frame()
+
+testData %>% colnames()
+
+
+EnsembleEval <- predict(ensembleModel, testData) %>% 
+  cbind(df$TargetHouse) %>% as.data.frame()
+
+
+colnames(EnsembleEval) <- c("Predicted","Actual")
+EnsembleEval$Actual <- as.integer(EnsembleEval$Actual)
+EnsembleEval
+
+EnsembleEval %>% 
+  mutate(outcome = if_else(Actual == Predicted, "correct","wrong")) %>% 
+  filter(outcome == "correct") %>% 
+  nrow() / nrow(df)

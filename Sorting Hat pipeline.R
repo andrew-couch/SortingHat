@@ -117,24 +117,20 @@ MARSModel <- readRDS("MARSModel.rds")
 KnnModel <- readRDS("KnnModel.rds")
 RandomForestModel <- readRDS("RandomForestModel.rds")
 SVMModel <- readRDS("SupportVectorMachineModel.rds")
+EnsembleModel <- readRDS("EnsembleModel.rds")
 
-HarryPotterHouse <- data.frame("House" = c("Gryffindor", "Hufflepuff", "Ravenclaw", "Slytherin"),
-                               "HouseKey" = c(1,2,3,4))
-ModelList <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM") %>% as.data.frame() %>% rename(.,"Models" = .)
+ensembleData <- cbind(predict(LogisticRegressionModel, testData),
+                          predict(NaiveBayesModel, testData),
+                          predict(L1Model, testData),
+                          predict(L2Model,testData),
+                          predict(ElasticNetModel, testData),
+                          predict(MARSModel, testData),
+                          predict(KnnModel, testData),
+                          predict(RandomForestModel, testData),
+                          predict(SVMModel, testData))
 
-ModelPredictions <- rbind(predict(LogisticRegressionModel, df),
-      predict(NaiveBayesModel, df),
-      predict(L1Model, df),
-      predict(L2Model,df),
-      predict(ElasticNetModel, df),
-      predict(MARSModel, df),
-      predict(KnnModel, df),
-      predict(RandomForestModel, df),
-      predict(SVMModel, df)) %>% 
-  as.data.frame() %>% 
-  rename("House" = V1) %>% 
-  cbind(ModelList)
-  
+HousePrediction <- predict(EnsembleModel, ensembleData, type = "prob")
+
 HousePredictions <- ModelPredictions %>% 
   count(House, House) %>% 
   right_join(HarryPotterHouse, by = c("House" = "HouseKey")) %>% 

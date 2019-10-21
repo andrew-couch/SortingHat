@@ -26,34 +26,33 @@ registerDoParallel(cl)
 
 baseLineModel <- train(Class~., 
                        data = modelData, 
-                       method = "bayesglm")
-beep(3)
-stopCluster(cl)
-
-#saveRDS(baseLineModel, "LogisticRegressionModel.rds")
-
-cl <- makePSOCKcluster(7)
-registerDoParallel(cl)
-
+                       method = "lda")
 boxCoxModel <- train(Class~., 
-                     data = trainData,
-                     method = "gpls", 
+                     data = modelData,
+                     method = "lda", 
                      preProc = c("BoxCox"))
 YeoJohnsonModel <- train(Class~., 
-                         data = trainData,
-                         method = "gpls", 
+                         data = modelData,
+                         method = "lda", 
                          preProc = c("YeoJohnson"))
 
 CenterScaleModel <- train(Class~., 
-                          data = trainData,
-                          method = "gpls", 
+                          data = modelData,
+                          method = "lda", 
                           preProc = c("center","scale"))
+beep(3)
 stopCluster(cl)
 
-samplingComparison <- resamples(list("BoxCox" = boxCoxModel, "YeoJohnson" = YeoJohnsonModel, "CenterScale" = CenterScaleModel, "BaseLine" = baseLineModel))
+
+
+
+samplingComparison <- resamples(list("BoxCox" = boxCoxModel, "YeoJohnson" = YeoJohnsonModel, "CenterScale" = CenterScaleModel))
 summary(samplingComparison)
 
 testAccuracy(baseLineModel)
 testAccuracy(boxCoxModel)
 testAccuracy(YeoJohnsonModel)
 testAccuracy(CenterScaleModel)
+
+
+saveRDS(YeoJohnsonModel, "LogisticRegressionModel.rds")

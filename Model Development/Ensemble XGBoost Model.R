@@ -9,6 +9,17 @@ df$TargetHouse <- as.factor(df$TargetHouse)
 testData <- df
 trainData <- upSample(df %>% select(-TargetHouse), df$TargetHouse)
 
+testAccuracy <- function (model) {
+  model %>% 
+    predict(df) %>% 
+    cbind(df$TargetHouse) %>% 
+    as.data.frame() %>% 
+    rename(., "Predicted" = ., "Actual" = V2) %>% 
+    mutate(Correct = if_else(Actual == Predicted, "Correct", "Wrong")) %>% 
+    filter(Correct == "Correct") %>%
+    nrow() / nrow(df)
+}
+
 LogisticRegressionModel <- readRDS("LogisticRegressionModel.rds")
 NaiveBayesModel <- readRDS("NaiveBayesModel.rds")
 L1Model <- readRDS("L1Model.rds")
@@ -45,7 +56,36 @@ ensembleTest <- cbind(predict(LogisticRegressionModel, testData),
 colnames(ensembleTest) <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM", "Actual")
 ensembleTrain$Actual <- as.factor(ensembleTrain$Actual)
 
+
+cl <- makePSOCKcluster(7)
+registerDoParallel(cl)
+
+xgbDARTBase <- train(Class~., 
+                     data = ensembleTrain, 
+                     method = "xgbDART")
+xgbLinear <- train(Class~., 
+                   data = ensembleTrain, 
+                   method = "xgbLinear")
+xgbTree <- train(Class~., 
+                 data = ensembleTrain, 
+                 method = "xgbTree")
+
+stopCluster(cl)
+
+XgboostModels <- resamples(list("DART" = xgbDARTBase, "Linear" = xgbLinear, "Tree" = xgbTree))
+summary(XgboostModels)
+
+testAccuracy(xgbDARTBase)
+testAccuracy(xgbLinear)
+testAccuracy(xgbTree)
+
+cl <- makePSOCKcluster(7)
+registerDoParallel(cl)
+
 ensembleModel <- train(Actual~., data = ensembleTrain, method = "xgbLinear")
+
+stopCluster(cl)
+
 ensembleModel
 ensembleModel %>% varImp()
 
@@ -56,6 +96,5 @@ predict(ensembleModel, ensembleTest) %>%
   mutate(results = if_else(predicted == actual, "correct","wrong")) %>% 
   filter(results == "correct") %>% 
   nrow() / nrow(ensembleTest)
-
 
 saveRDS(ensembleModel, "EnsembleModel.rds")

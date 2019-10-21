@@ -2,15 +2,15 @@ library(tidyverse)
 library(rtweet)
 library(tidytext)
 library(sentimentr)
-library(ggradar)
 library(doParallel)
 library(caret)
+library(ggthemes)
 
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 StartTime <- Sys.time()
 
-userName <- "gtconway3d"
+userName <- "_andrewcouch"
 
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
 bigram <- read.csv("bigramlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -141,10 +141,9 @@ stopCluster(cl)
 EndTime <- Sys.time()
 StartTime - EndTime
 
-HousePrediction %>% mutate(Name = userName) %>%
-  column_to_rownames("Name") %>% 
-  ungroup() %>% 
-  as_tibble(rownames = "Name") %>% 
-  ggradar()
+HousePrediction %>% 
+  gather(key = "House", value = "Percentage") %>% 
+  ggplot(aes(x = House, y = Percentage, color = House, fill = House)) + geom_col() + 
+  scale_y_continuous(labels = scales::percent) + ggtitle(paste(userName, "'s House Assignment", sep = "")) + theme(plot.title = element_text(hjust = .5)) + theme_economist()
 
 HousePrediction

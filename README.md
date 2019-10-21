@@ -75,7 +75,7 @@ The features consists of Book, House, Character, and Text
 #### Support Vector Machine (Completed)
 * method = svmLinear
 
-#### Extreme Gradient Boosting
+#### Extreme Gradient Boosting (Completed)
 * method = XGBoostLinear
 
 #### Convolutional Neural Network

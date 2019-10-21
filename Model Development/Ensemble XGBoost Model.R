@@ -46,8 +46,8 @@ colnames(ensembleTest) <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS
 ensembleTrain$Actual <- as.factor(ensembleTrain$Actual)
 
 ensembleModel <- train(Actual~., data = ensembleTrain, method = "xgbLinear")
-beep(3)
-
+ensembleModel
+ensembleModel %>% varImp()
 
 predict(ensembleModel, ensembleTest) %>% 
   cbind(ensembleTest$Actual) %>% 

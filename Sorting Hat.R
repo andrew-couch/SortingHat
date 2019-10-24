@@ -19,7 +19,7 @@ registerDoParallel(cl)
 StartTime <- Sys.time()
 
 #Twitter username for sorting hat 
-userName <- "fchollet"
+userName <- "BoJackHorseman"
 
 #Reads in Document Term Matrix
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)

@@ -143,18 +143,24 @@ EnsembleModel <- readRDS("EnsembleModel.rds")
 
 
 #Generates data for esemble model
-ensembleData <- cbind(predict(LogisticRegressionModel, df),
-                      predict(NaiveBayesModel, df),
-                      predict(L1Model, df),
-                      predict(L2Model,df),
-                      predict(ElasticNetModel, df),
-                      predict(MARSModel, df),
-                      predict(KnnModel, df),
-                      predict(RandomForestModel, df),
-                      predict(SVMModel,df)) %>% 
-  as.data.frame()
-
-colnames(ensembleData) <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM")
+ensembleData <- cbind(predict(LogisticRegressionModel, df, type = "prob"),
+                          predict(NaiveBayesModel, df, type = "prob"),
+                          predict(L1Model, df, type = "prob"),
+                          predict(L2Model,df, type = "prob"),
+                          predict(ElasticNetModel, df, type = "prob"),
+                          predict(MARSModel, df, type = "prob"),
+                          predict(KnnModel, df, type = "prob"),
+                          predict(RandomForestModel, df, type = "prob"),
+                          predict(SVMModel, df, type = "prob"))
+colnames(ensembleData) <- c("LogisticGryffindor","LogisticHufflepuff","LogisticRavenclaw","LogisticSlytherin",
+                                "NaiveBayesGryffindor","NaiveBayesHufflepuff","NaiveBayesRavenclaw","NaiveBayesSlytherin",
+                                "L1Gryffindor","L1Hufflepuff","L1Ravenclaw","L1Slytherin",
+                                "L2Gryffindor","L2Hufflepuff","L2Ravenclaw","L2Slytherin",
+                                "ElasticNetGryffindor","ElasticNetHufflepuff","ElasticNetRavenclaw","ElasticNetSlytherin",
+                                "MARSGryffindor","MARSHufflepuff","MARSRavenclaw","MARSSlytherin",
+                                "KNNGryffindor","KNNHufflepuff","KNNRavenclaw","KNNSlytherin",
+                                "RandomForestGryffindor","RandomForestHufflepuff","RandomForestRavenclaw","RandomForestSlytherin",
+                                "SVMGryffindor","SVMHufflepuff","SVMRavenclaw","SVMSlytherin")
 
 #Uses ensemble model to make final prediction
 HousePrediction <- predict(EnsembleModel, ensembleData, type = "prob")

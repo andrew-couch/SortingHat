@@ -30,32 +30,46 @@ KnnModel <- readRDS("KnnModel.rds")
 RandomForestModel <- readRDS("RandomForestModel.rds")
 SVMModel <- readRDS("SupportVectorMachineModel.rds")
 
-ensembleTrain <- cbind(predict(LogisticRegressionModel, trainData),
-                 predict(NaiveBayesModel, trainData),
-                 predict(L1Model, trainData),
-                 predict(L2Model,trainData),
-                 predict(ElasticNetModel, trainData),
-                 predict(MARSModel, trainData),
-                 predict(KnnModel, trainData),
-                 predict(RandomForestModel, trainData),
-                 predict(SVMModel, trainData), trainData$Class) %>% 
-  as.data.frame()
-colnames(ensembleTrain) <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM", "Actual")
+ensembleTrainData <- cbind(predict(LogisticRegressionModel, trainData, type = "prob"),
+      predict(NaiveBayesModel, trainData, type = "prob"),
+      predict(L1Model, trainData, type = "prob"),
+      predict(L2Model,trainData, type = "prob"),
+      predict(ElasticNetModel, trainData, type = "prob"),
+      predict(MARSModel, trainData, type = "prob"),
+      predict(KnnModel, trainData, type = "prob"),
+      predict(RandomForestModel, trainData, type = "prob"),
+      predict(SVMModel, trainData, type = "prob"),
+      trainData$Class)
+colnames(ensembleTrainData) <- c("LogisticGryffindor","LogisticHufflepuff","LogisticRavenclaw","LogisticSlytherin",
+                                 "NaiveBayesGryffindor","NaiveBayesHufflepuff","NaiveBayesRavenclaw","NaiveBayesSlytherin",
+                                 "L1Gryffindor","L1Hufflepuff","L1Ravenclaw","L1Slytherin",
+                                 "L2Gryffindor","L2Hufflepuff","L2Ravenclaw","L2Slytherin",
+                                 "ElasticNetGryffindor","ElasticNetHufflepuff","ElasticNetRavenclaw","ElasticNetSlytherin",
+                                 "MARSGryffindor","MARSHufflepuff","MARSRavenclaw","MARSSlytherin",
+                                 "KNNGryffindor","KNNHufflepuff","KNNRavenclaw","KNNSlytherin",
+                                 "RandomForestGryffindor","RandomForestHufflepuff","RandomForestRavenclaw","RandomForestSlytherin",
+                                 "SVMGryffindor","SVMHufflepuff","SVMRavenclaw","SVMSlytherin",
+                                 "Class")
+ensembleTrain$Class <- as.factor(ensembleTrain$Class)
 
 
-ensembleTest <- cbind(predict(LogisticRegressionModel, testData),
-                       predict(NaiveBayesModel, testData),
-                       predict(L1Model, testData),
-                       predict(L2Model,testData),
-                       predict(ElasticNetModel, testData),
-                       predict(MARSModel, testData),
-                       predict(KnnModel, testData),
-                       predict(RandomForestModel, testData),
-                       predict(SVMModel, testData), testData$TargetHouse) %>% 
-  as.data.frame()
-colnames(ensembleTest) <- c("Logistic","NaiveBayes","L1","L2","ElasticNet","MARS","Knn","RandomForest","SVM", "Actual")
-ensembleTrain$Actual <- as.factor(ensembleTrain$Actual)
-
+ensembleTest <- cbind(predict(LogisticRegressionModel, testData, type = "prob"),
+                      predict(NaiveBayesModel, testData, type = "prob"),
+                      predict(L1Model, testData, type = "prob"),
+                      predict(L2Model,testData, type = "prob"),
+                      predict(ElasticNetModel, testData, type = "prob"),
+                      predict(MARSModel, testData, type = "prob"),
+                      predict(KnnModel, testData, type = "prob"),
+                      predict(RandomForestModel, testData, type = "prob"))
+colnames(ensembleTest) <- c("LogisticGryffindor","LogisticHufflepuff","LogisticRavenclaw","LogisticSlytherin",
+                            "NaiveBayesGryffindor","NaiveBayesHufflepuff","NaiveBayesRavenclaw","NaiveBayesSlytherin",
+                            "L1Gryffindor","L1Hufflepuff","L1Ravenclaw","L1Slytherin",
+                            "L2Gryffindor","L2Hufflepuff","L2Ravenclaw","L2Slytherin",
+                            "ElasticNetGryffindor","ElasticNetHufflepuff","ElasticNetRavenclaw","ElasticNetSlytherin",
+                            "MARSGryffindor","MARSHufflepuff","MARSRavenclaw","MARSSlytherin",
+                            "KNNGryffindor","KNNHufflepuff","KNNRavenclaw","KNNSlytherin",
+                            "RandomForestGryffindor","RandomForestHufflepuff","RandomForestRavenclaw","RandomForestSlytherin",
+                            "SVMGryffindor","SVMHufflepuff","SVMRavenclaw","SVMSlytherin")
 
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)

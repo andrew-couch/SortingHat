@@ -90,10 +90,7 @@ CenterScaleModel <- train(Class~.,
                              data = modelData, 
                              method = "svmLinear", 
                              preProc = c("center","scale"),
-                             trControl = trainControl(method = "repeatedcv", 
-                                                      repeats = 10, 
-                                                      number = 10, 
-                                                      allowParallel = T))
+                             trControl = trainControl(classProbs = TRUE))
 stopCluster(cl)
 
 
@@ -115,6 +112,6 @@ CenterScaleModel %>%
   filter(Correct == "Correct") %>% 
   nrow() / nrow(df)
 
-CenterScaleModel
+CenterScaleModel %>% predict(modelData, type = "prob")
 
 saveRDS(CenterScaleModel, "SupportVectorMachineModel.rds")

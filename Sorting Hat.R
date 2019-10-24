@@ -12,14 +12,14 @@ library(sentimentr)
 library(doParallel)
 library(ggrepel)
 library(ggthemes)
-
+rm(list = ls())
 #Enables parallel computing for faster compile times
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 StartTime <- Sys.time()
 
 #Twitter username for sorting hat 
-userName <- "uiowa"
+userName <- "fchollet"
 
 #Reads in Document Term Matrix
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -219,10 +219,10 @@ sortedList %>%
   geom_vline(xintercept = 0, linetype = "dashed", alpha = .5) + 
   geom_hline(yintercept = 0, linetype = "dashed", alpha = .5) +
   geom_point(aes(color = house)) + 
-  ylab(expression("More likely Slytherin  " %<->% " More likely Gryffindor")) +
-  xlab(expression("More likely Ravenclaw  " %<->% " More likely Hufflepuff")) + 
   geom_text_repel(data = exampleNames, 
                   mapping = aes(x = x, y = y, label = Name),
                   nudge_x = .1) +
   theme_fivethirtyeight() +
-  theme(aspect.ratio = 1)
+  theme(aspect.ratio = 1, axis.title = element_text()) +
+  ylab(expression("More likely Slytherin  " %<->% " More likely Gryffindor")) +
+  xlab(expression("More likely Ravenclaw  " %<->% " More likely Hufflepuff"))

@@ -50,18 +50,22 @@ colnames(ensembleTrainData) <- c("LogisticGryffindor","LogisticHufflepuff","Logi
                                  "RandomForestGryffindor","RandomForestHufflepuff","RandomForestRavenclaw","RandomForestSlytherin",
                                  "SVMGryffindor","SVMHufflepuff","SVMRavenclaw","SVMSlytherin",
                                  "Class")
-ensembleTrain$Class <- as.factor(ensembleTrain$Class)
+ensembleTrainData$Class <- as.factor(ensembleTrainData$Class)
 
 
-ensembleTest <- cbind(predict(LogisticRegressionModel, testData, type = "prob"),
+ensembleTestData <- cbind(predict(LogisticRegressionModel, testData, type = "prob"),
                       predict(NaiveBayesModel, testData, type = "prob"),
                       predict(L1Model, testData, type = "prob"),
                       predict(L2Model,testData, type = "prob"),
                       predict(ElasticNetModel, testData, type = "prob"),
                       predict(MARSModel, testData, type = "prob"),
                       predict(KnnModel, testData, type = "prob"),
-                      predict(RandomForestModel, testData, type = "prob"))
-colnames(ensembleTest) <- c("LogisticGryffindor","LogisticHufflepuff","LogisticRavenclaw","LogisticSlytherin",
+                      predict(RandomForestModel, testData, type = "prob"),
+                      predict(SVMModel, testData, type = "prob"))
+
+
+
+colnames(ensembleTestData) <- c("LogisticGryffindor","LogisticHufflepuff","LogisticRavenclaw","LogisticSlytherin",
                             "NaiveBayesGryffindor","NaiveBayesHufflepuff","NaiveBayesRavenclaw","NaiveBayesSlytherin",
                             "L1Gryffindor","L1Hufflepuff","L1Ravenclaw","L1Slytherin",
                             "L2Gryffindor","L2Hufflepuff","L2Ravenclaw","L2Slytherin",
@@ -71,17 +75,23 @@ colnames(ensembleTest) <- c("LogisticGryffindor","LogisticHufflepuff","LogisticR
                             "RandomForestGryffindor","RandomForestHufflepuff","RandomForestRavenclaw","RandomForestSlytherin",
                             "SVMGryffindor","SVMHufflepuff","SVMRavenclaw","SVMSlytherin")
 
+
+
+ensembleTrainData
+ensembleTestData
+
+
 cl <- makePSOCKcluster(7)
 registerDoParallel(cl)
 
 xgbDARTBase <- train(Class~., 
-                     data = ensembleTrain, 
+                     data = ensembleTrainData, 
                      method = "xgbDART")
 xgbLinear <- train(Class~., 
-                   data = ensembleTrain, 
+                   data = ensembleTrainData, 
                    method = "xgbLinear")
 xgbTree <- train(Class~., 
-                 data = ensembleTrain, 
+                 data = ensembleTrainData, 
                  method = "xgbTree")
 
 stopCluster(cl)
@@ -93,22 +103,6 @@ testAccuracy(xgbDARTBase)
 testAccuracy(xgbLinear)
 testAccuracy(xgbTree)
 
-cl <- makePSOCKcluster(7)
-registerDoParallel(cl)
-
-ensembleModel <- train(Actual~., data = ensembleTrain, method = "xgbLinear")
-
-stopCluster(cl)
-
-ensembleModel
-ensembleModel %>% varImp()
-
-predict(ensembleModel, ensembleTest) %>% 
-  cbind(ensembleTest$Actual) %>% 
-  as.data.frame() %>% 
-  rename(., "predicted" = ., "actual" = V2) %>% 
-  mutate(results = if_else(predicted == actual, "correct","wrong")) %>% 
-  filter(results == "correct") %>% 
-  nrow() / nrow(ensembleTest)
-
-saveRDS(ensembleModel, "EnsembleModel.rds")
+xgbLinear %>% confusionMatrix()
+predict(xgbLinear, ensembleTestData) %>% cbind(df$TargetHouse) %>% as.data.frame() %>% rename(.,"predicted" = ., "actual" = V2) %>% mutate(output = if_else(predicted == actual, "correct","wrong")) %>% filter(output == "correct") %>% nrow() / nrow(df)
+saveRDS(xgbLinear, "EnsembleModel.rds")

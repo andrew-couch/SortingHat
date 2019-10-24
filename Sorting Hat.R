@@ -19,7 +19,7 @@ registerDoParallel(cl)
 StartTime <- Sys.time()
 
 #Twitter username for sorting hat 
-userName <- "Walmart"
+userName <- "uiowa"
 
 #Reads in Document Term Matrix
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -193,7 +193,8 @@ HousePrediction %>%
               append = TRUE)
 
 sortedList <- read.csv("SortingHatList.csv")
-sortedList
+
+
 exampleNames <- sortedList %>% 
   gather(key = "house", value = "value", -Name) %>% 
   group_by(Name) %>% 

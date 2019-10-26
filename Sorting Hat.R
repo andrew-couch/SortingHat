@@ -19,7 +19,7 @@ registerDoParallel(cl)
 StartTime <- Sys.time()
 
 #Twitter username for sorting hat 
-userName <- "BoJackHorseman"
+userName <- "DaviSusan"
 
 #Reads in Document Term Matrix
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
@@ -46,6 +46,7 @@ tweetData <- tweetData %>%
 #Generate BOW, Bigram,and Trigram Features
 bowFeatures <- tweetData %>% 
   unnest_tokens(word, "text") %>% 
+  filter(word != "tweet") %>% 
   right_join(bow, by = c("word" = "bow")) %>% 
   count(word, word) %>%
   mutate(n = n-1) %>% 

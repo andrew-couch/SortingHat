@@ -43,8 +43,7 @@ The features consists of Book, House, Character, and Text
 ## Modeling
 *	The model will be a multiclass classification problem 
 *	Multiple models will be created and once tuned, will be ensembled 
-*	Models will range from simple logistic regression model to a Recurrent Neural Network
-*	Models will be created using caret and keras
+*	Models will range from simple logistic regression model to Xgboost and SVM models 
 * Model ensembling will be done through stacking with Xgboost
 
 ## Model List
@@ -77,9 +76,3 @@ The features consists of Book, House, Character, and Text
 
 #### Extreme Gradient Boosting (Completed)
 * method = XGBoostLinear
-
-#### Convolutional Neural Network
-* method = Keras pacakge 
-
-#### Long Short Term Memory Neural Network
-* method = Keras package

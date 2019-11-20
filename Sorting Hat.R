@@ -13,24 +13,25 @@ library(doParallel)
 library(ggrepel)
 library(ggthemes)
 rm(list = ls())
-#Enables parallel computing for faster compile times
-cl <- makePSOCKcluster(7)
-registerDoParallel(cl)
-StartTime <- Sys.time()
+get_token()
+
 
 #Twitter username for sorting hat 
-userName <- "DaviSusan"
+userName <- "senwarren"
 
 #Reads in Document Term Matrix
 bow <- read.csv("bowlist.csv", header = TRUE,stringsAsFactors = FALSE)
 bigram <- read.csv("bigramlist.csv", header = TRUE,stringsAsFactors = FALSE)
 trigram <- read.csv("trigramlist.csv", header = TRUE,stringsAsFactors = FALSE)
 
-#Reads in twitter API token
-token <- readRDS("twitter_token.rds")
-
 #Retrieves tweets from username 
 myTweets <- get_timeline(userName, n = 3200)
+
+#Enables parallel computing for faster compile times
+cl <- makePSOCKcluster(7)
+registerDoParallel(cl)
+StartTime <- Sys.time()
+
 
 #Cleans data by removing @Names, links, and Retweets
 tweetData <- myTweets %>% 
